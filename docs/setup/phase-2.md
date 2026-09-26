@@ -83,7 +83,7 @@ This builds a test server for the profile in `~/.cache/mc-host/check-packs/adven
 boots it once without datapacks (the mods' own errors are ignored from then on), then with
 the packs, and names every pack that causes an error. It takes about 20–60 seconds per
 boot. Without `--all`, it checks only the profile's `datapacks`. Add `--keep` to look at the
-test world and the boot logs afterwards.
+test world and the boot logs afterwards. A failed check always keeps its boot logs and prints where they are.
 
 ## Manual checklist
 

@@ -99,19 +99,25 @@ export function spawnProcess(
   cmd: string[],
   cwd: string,
   echo: (text: string) => void,
-  o: { stderr?: "inherit" | "ignore" } = {},
+  /** "lines": stderr lines go to the same listeners as stdout (not echoed). */
+  o: { stderr?: "inherit" | "ignore" | "lines" } = {},
 ): ServerProcess {
-  const proc = Bun.spawn(cmd, { cwd, stdin: "pipe", stdout: "pipe", stderr: o.stderr ?? "inherit" });
+  const stderr = o.stderr ?? "inherit";
+  const proc = Bun.spawn(cmd, { cwd, stdin: "pipe", stdout: "pipe", stderr: stderr === "lines" ? "pipe" : stderr });
   const listeners: ((line: string) => void)[] = [];
-  const split = new LineSplitter();
-  const decoder = new TextDecoder();
-  const reading = (async () => {
-    for await (const chunk of proc.stdout) {
+  const pump = async (stream: ReadableStream<Uint8Array>, show: boolean) => {
+    const split = new LineSplitter();
+    const decoder = new TextDecoder();
+    for await (const chunk of stream) {
       const text = decoder.decode(chunk, { stream: true });
-      echo(text);
+      if (show) echo(text);
       for (const line of split.push(text)) for (const cb of listeners) cb(line);
     }
-  })().catch(() => {});
+  };
+  const reading = Promise.all([
+    pump(proc.stdout, true),
+    stderr === "lines" ? pump(proc.stderr as ReadableStream<Uint8Array>, false) : null,
+  ]).catch(() => {});
   return {
     write(line) {
       try {

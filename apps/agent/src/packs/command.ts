@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readdir, rm } from "node:fs/promises";
+import { createServer } from "node:net";
 import { join } from "node:path";
 import { USER_AGENT, UserError } from "@mc/profile";
 import type { Command } from "../cli";
@@ -28,7 +29,12 @@ export async function cmdCheckPacks(cmd: Extract<Command, { kind: "check-packs" 
   deps.log(`Checking ${files.length} datapacks against ${profile.name} (Minecraft ${lock.minecraft})…`);
   // The server files stay between checks; only the world is thrown away.
   await buildServer({
-    profile: { ...profile, datapacks: [], properties: { ...profile.properties, "level-name": LEVEL, "level-type": "minecraft:flat" } },
+    profile: {
+      ...profile,
+      datapacks: [],
+      // Its own port, so the check also works on a PC that's hosting the real world right now.
+      properties: { ...profile.properties, "level-name": LEVEL, "level-type": "minecraft:flat", "server-port": await freePort() },
+    },
     lock,
     dir,
     force: true,
@@ -41,18 +47,34 @@ export async function cmdCheckPacks(cmd: Extract<Command, { kind: "check-packs" 
   await rm(logsDir, { recursive: true, force: true });
   const boot = createBoot({ serverDir: dir, levelName: LEVEL, packsDir: cmd.packsDir, javaBin, marker: await readMarker(dir), logsDir });
 
+  let passed = false;
   try {
     const { lines, summary, ok } = formatReport(await checkPacks(packs, boot, deps.log));
     for (const line of lines) deps.log(line);
     if (cmd.keep) deps.log(`The test world and the boot logs are in ${dir}.`);
     if (!ok) throw new UserError(summary);
     deps.log(summary);
+    passed = true;
   } finally {
     if (!cmd.keep) {
       await rm(join(dir, LEVEL), { recursive: true, force: true });
-      await rm(logsDir, { recursive: true, force: true });
+      // A failed check keeps its logs: they're the only record of why a boot failed.
+      if (passed) await rm(logsDir, { recursive: true, force: true });
+      else if (existsSync(logsDir)) deps.log(`The boot logs are in ${logsDir}.`);
     }
   }
+}
+
+/** A TCP port nothing is listening on right now. */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const s = createServer();
+    s.once("error", reject);
+    s.listen(0, () => {
+      const { port } = s.address() as { port: number };
+      s.close(() => resolve(port));
+    });
+  });
 }
 
 async function packFiles(cmd: Extract<Command, { kind: "check-packs" }>, datapacks: string[]): Promise<string[]> {

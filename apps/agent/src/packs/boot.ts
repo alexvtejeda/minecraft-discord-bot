@@ -29,7 +29,7 @@ export function createBoot(o: BootOptions): Boot {
     await mkdir(join(world, "datapacks"), { recursive: true });
     for (const f of files) await copyFile(join(o.packsDir, f), join(world, "datapacks", f));
 
-    const proc = spawnProcess(javaCommand(o.marker, o.javaBin), o.serverDir, () => {}, { stderr: "ignore" });
+    const proc = spawnProcess(javaCommand(o.marker, o.javaBin), o.serverDir, () => {}, { stderr: "lines" });
     const con = new ServerConsole(proc);
     const lines: string[] = [];
     con.onLine((line) => lines.push(line));
@@ -43,7 +43,10 @@ export function createBoot(o: BootOptions): Boot {
       await con.waitFor(/Done \(/, o.startTimeoutMs ?? START_TIMEOUT_MS);
       started = true;
       con.send("stop");
-      await Promise.race([exit, Bun.sleep(o.stopTimeoutMs ?? STOP_TIMEOUT_MS)]);
+      // A timer that's cleared, not Bun.sleep: a pending sleep would keep mc-host running after the check.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      await Promise.race([exit, new Promise((r) => (timer = setTimeout(r, o.stopTimeoutMs ?? STOP_TIMEOUT_MS)))]);
+      clearTimeout(timer);
     } catch {
       // It exited before Done, or never got there; `exited` tells which.
     }

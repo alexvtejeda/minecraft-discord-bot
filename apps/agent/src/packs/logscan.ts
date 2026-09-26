@@ -32,7 +32,11 @@ export function scanLog(lines: string[]): LogError[] {
 
 /** Compare errors across boots: same text, whatever the numbers in it. */
 export function errorKey(e: LogError): string {
-  return e.lines.join("\n").replace(/\d+/g, "#");
+  return e.lines
+    .join("\n")
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "#")
+    .replace(/@[0-9a-f]+\b/gi, "@#")
+    .replace(/\d+/g, "#");
 }
 
 export function resourceIds(line: string): string[] {

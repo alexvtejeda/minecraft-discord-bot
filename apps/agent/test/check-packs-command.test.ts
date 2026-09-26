@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zipSync } from "fflate";
@@ -92,7 +92,6 @@ test("--all fails the pack that breaks the server, passes the rest and cleans up
   expect(out).toContain(`  FAIL  ${BAD}\n        java.lang.IllegalStateException: Unbound values in registry`);
   expect(out).toContain(`  ok    ${GOOD}`);
   expect(existsSync(join(scratch, "check"))).toBe(false);
-  expect(existsSync(join(scratch, "check-logs"))).toBe(false);
   expect(existsSync(join(scratch, "fabric-server-launch.jar"))).toBe(true);
 });
 
@@ -120,4 +119,15 @@ test("declining the EULA stops before anything is built", async () => {
   deps.ask = async () => "no";
   await expect(check({ all: true })).rejects.toThrow("You need to agree to the EULA to check datapacks.");
   expect(existsSync(join(scratch, "fabric-server-launch.jar"))).toBe(false);
+});
+
+// Final review 3
+test("the test server gets its own port, and a failed check keeps its logs", async () => {
+  await expect(check({ all: true })).rejects.toThrow("have errors");
+  const port = /^server-port=(\d+)$/m.exec(readFileSync(join(scratch, "server.properties"), "utf8"))?.[1];
+  expect(port).toBeDefined();
+  expect(port).not.toBe("25565");
+  expect(readdirSync(join(scratch, "check-logs")).length).toBe(3);
+  expect(lines).toContain(`The boot logs are in ${join(scratch, "check-logs")}.`);
+  expect(existsSync(join(scratch, "check"))).toBe(false);
 });

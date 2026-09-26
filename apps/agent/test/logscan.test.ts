@@ -82,3 +82,10 @@ test("an error no pack can be tied to is unattributed", () => {
   const errors = scanLog(["[10:00:00] [main/ERROR]: Something broke"]);
   expect(attribute(errors, [AFK, HEADS])).toEqual({ blamed: new Map(), unattributed: errors });
 });
+
+// Final review 2
+test("errorKey ignores object hashes and uuids that change between boots", () => {
+  const a = scanLog(["[10:00:00] [main/ERROR]: Bad codec for net.minecraft.class_2960@6d3af739 in 3f2a1b4c-0d9e-4f11-8a2b-7c6d5e4f3a21"]);
+  const b = scanLog(["[10:00:00] [main/ERROR]: Bad codec for net.minecraft.class_2960@1b2c3d4e in 9e8d7c6b-5a4f-4e3d-2c1b-0a9f8e7d6c5b"]);
+  expect(errorKey(a[0]!)).toBe(errorKey(b[0]!));
+});

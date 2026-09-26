@@ -70,3 +70,26 @@ test("a server that ignores stop is killed", async () => {
   expect(r.started).toBe(true);
   expect(r.lines.at(-1)).toBe("mc-host: the server didn't stop in time, so it was killed.");
 });
+
+// Final review 1
+test("a clean boot leaves no timer behind that keeps mc-host running", async () => {
+  java(DONE, "read cmd");
+  const script = join(root, "run.ts");
+  writeFileSync(
+    script,
+    `import { createBoot } from ${JSON.stringify(join(import.meta.dir, "../src/packs/boot"))};\n` +
+      `await createBoot(${JSON.stringify({ ...o, stopTimeoutMs: 20_000 })})([], "baseline");\n`,
+  );
+  const t = Date.now();
+  const p = Bun.spawnSync(["bun", script]);
+  expect(p.exitCode).toBe(0);
+  expect(Date.now() - t).toBeLessThan(10_000);
+}, 30_000);
+
+// Final review 3
+test("stderr from java is kept, so a JVM that won't start says why", async () => {
+  java("echo 'Error: Could not create the Java Virtual Machine.' >&2", "exit 1");
+  const r = await createBoot(o)([], "baseline");
+  expect(r.started).toBe(false);
+  expect(r.lines).toContain("Error: Could not create the Java Virtual Machine.");
+});
