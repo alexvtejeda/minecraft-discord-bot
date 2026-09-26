@@ -37,6 +37,7 @@ not part of it. A maintainer drives everything through `mc-host admin`.
 | Java in Docker | `eclipse-temurin:25-jre` base image | 2a doesn't depend on the portable JDK work in 2b. |
 | Lease expiry | Checked lazily, whenever a claim or status request comes in. No cron. | There are no announcements until Phase 3, so nothing needs to happen at the moment of expiry. |
 | Worker routing | Hono, with zod schemas shared through `packages/protocol` | Small, typed, and the agent and the Worker can't drift apart. |
+| Local R2 | With DEV_R2_PROXY=1 the Worker hands out /dev/r2/<key> URLs that read and write the binding | Miniflare and wrangler dev have no S3 endpoint to presign against. Off in production. |
 
 ## Components
 
@@ -56,7 +57,7 @@ apps/agent/          EXISTING, gains:
   src/host/console.ts     stdin multiplexer
   src/host/snapshot.ts    streaming zip/unzip and sha256
   src/host/state.ts       local state.json
-  src/host/address.ts     tailnet IPv4 (LocalAPI socket in Docker, `tailscale ip -4` elsewhere)
+  src/host/address.ts     tailnet IPv4 from the network interfaces (100.64.0.0/10, preferring "tailscale*")
   src/admin.ts            `mc-host admin …`
 infra/docker/        NEW  Dockerfile, compose.yml
 scripts/install.sh   NEW  Linux installer and the `mc-host` shim
@@ -97,11 +98,11 @@ in `users`, and a revoked or unknown token gets a 401.
 
 | Route | Behavior |
 |---|---|
-| `GET /agent/manifest` | Returns the active world (id, name, MC version), its profile and lockfile, `pregen_done`, and the latest snapshot as `{rev, sha256, size, url}` with a 1-hour presigned GET, or `null` at rev 0. With no active world, a 404 saying a maintainer needs to create one. |
+| `GET /agent/manifest` | Returns the active world (id, name, MC version), its profile and lockfile, `pregen_done`, and the latest snapshot as `{rev, sha256, size, url}` with a 1-hour presigned GET, or `null` at rev 0, and the lease: `null`, or the holder's name, address and times plus `you`. With no active world, a 404 saying a maintainer needs to create one. |
 | `POST /agent/lease/claim {hostAddress}` | A single conditional `UPDATE … WHERE holder_id IS NULL OR expires_at < now OR holder_id = me`. On success, it sets a new random `session_id`, `base_rev` = latest rev, and `expires_at` = now + 10 min. On failure, a 409 with the holder's name, address and claim time. |
 | `POST /agent/lease/heartbeat {sessionId}` | Needs the current `session_id`. Sets `expires_at` = now + 10 min. A 409 `lease_lost` otherwise. |
 | `POST /agent/snapshot/upload-url {sessionId, baseRev, size, sha256}` | Needs the current session, and `baseRev` must equal the latest rev. Returns `rev = baseRev + 1`, the key, and a presigned PUT with `x-amz-checksum-sha256` signed in, so R2 rejects a body that doesn't match. |
-| `POST /agent/snapshot/commit {sessionId, rev, key, pregenDone?}` | Needs the current session and `rev = latest + 1`. HEADs the object and checks the size. Then, in one D1 batch: insert the snapshot row, set `lease.base_rev = rev`, and set `pregen_done` if it was reported. Afterwards it prunes: keeps the last 5 snapshots and deletes older objects plus any objects under the world's prefix that have no row. |
+| `POST /agent/snapshot/commit {sessionId, rev, key, size, sha256, pregenDone?}` | Needs the current session and `rev = latest + 1`. HEADs the object and checks the size, and the sha256 too when R2 reports one. Then, in one D1 batch: insert the snapshot row, set `lease.base_rev = rev`, and set `pregen_done` if it was reported. Afterwards it prunes: keeps the last 5 snapshots and deletes older objects plus any objects under the world's prefix that have no row. |
 | `POST /agent/lease/release {sessionId}` | Needs the current session. Clears the lease. |
 
 **The session ID is the core safety rule.** Every write needs the `session_id` from the
@@ -217,11 +218,12 @@ Windows, `stop` prints "Press Ctrl+C in the hosting window."
 - **`tailscale` service.** The `tailscale/tailscale` image in kernel mode (`/dev/net/tun`,
   `NET_ADMIN`), with state in a named volume. It joins the Minecraft tailnet with
   `TS_AUTHKEY` and hostname `mc-<name>`. The Fedora host's own tailnet membership is
-  untouched. The LocalAPI socket is shared with the agent through a volume.
+  untouched.
 - **`agent` service.** It runs on `eclipse-temurin:25-jre` with the compiled `mc-host`
   binary, and uses `network_mode: service:tailscale`. Ports 25565 (TCP) and 24454 (UDP,
   voice chat) are therefore reachable only through the Minecraft tailnet, and nothing is
-  published on the host. The data volume is mounted with `:Z` for SELinux. It has
+  published on the host. Data lives in named volumes, which need no SELinux relabeling. The agent reads its tailnet IP from
+  `tailscale0`, which it sees because it shares the sidecar's network namespace. It has
   `init: true`, so Ctrl+C from `docker compose run -it` reaches the agent cleanly.
 
 ### `scripts/install.sh`

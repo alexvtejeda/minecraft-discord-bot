@@ -1,0 +1,36 @@
+# Installed to ~/.local/share/mc-host/compose.yml by scripts/install.sh.
+# The agent shares the Tailscale sidecar's network namespace, so ports 25565 (game) and
+# 24454/udp (voice chat) are reachable only through the Minecraft tailnet. Nothing is
+# published on the host, and the host's own tailnet membership is untouched.
+name: mc-host
+services:
+  tailscale:
+    image: tailscale/tailscale:stable
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_HOSTNAME: ${TS_HOSTNAME}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_EXTRA_ARGS: --accept-dns=false
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add: [NET_ADMIN, NET_RAW]
+    restart: unless-stopped
+  agent:
+    image: mc-host:local
+    network_mode: service:tailscale
+    depends_on: [tailscale]
+    init: true
+    stdin_open: true
+    tty: true
+    environment:
+      MC_WORKER_URL: ${MC_WORKER_URL}
+      MC_TOKEN: ${MC_TOKEN}
+    volumes:
+      - data:/data
+    stop_grace_period: 5m
+volumes:
+  tailscale-state: {}
+  data: {}

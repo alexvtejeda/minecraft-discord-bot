@@ -23,11 +23,11 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 
 ## Phase 2a: Hosting core
 Design: [docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md](docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md)
-- [ ] Worker skeleton with D1 and R2 (wrangler), shared `packages/protocol`
-- [ ] Agent API: lease claim, heartbeat and release; snapshot upload and commit; manifest
-- [ ] Admin API and `mc-host admin`: world create (with `--import`), token mint, lease release, status
-- [ ] `mc-host start/stop`: console multiplexer, autosave, heartbeat, crash recovery, Chunky pre-generation
-- [ ] `install.sh` (Linux, Docker + Tailscale sidecar)
+- [x] Worker skeleton with D1 and R2 (wrangler), shared `packages/protocol`
+- [x] Agent API: lease claim, heartbeat and release; snapshot upload and commit; manifest
+- [x] Admin API and `mc-host admin`: world create (with `--import`), token mint, lease release, status
+- [x] `mc-host start/stop`: console multiplexer, autosave, heartbeat, crash recovery, Chunky pre-generation
+- [x] `install.sh` (Linux, Docker + Tailscale sidecar)
 - [ ] Deploy, then host the imported `adventure` world from Fedora
 
 ## Phase 2b: Java and pack checks
