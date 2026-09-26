@@ -9,7 +9,7 @@ describe("toDiscordCommands", () => {
   const byName = Object.fromEntries(cmds.map((c) => [c.name, c]));
 
   it("registers each top-level command and group once", () => {
-    expect(cmds.map((c) => c.name).sort()).toEqual(["help", "host", "join", "mod", "modpack", "setup", "status", "world"]);
+    expect(cmds.map((c) => c.name).sort()).toEqual(["help", "host", "join", "mod", "modpack", "setup", "status", "tailnet", "world"]);
   });
 
   it("keeps names and descriptions inside Discord's limits", () => {
@@ -30,6 +30,7 @@ describe("toDiscordCommands", () => {
 
   it("hides a command only when every part of it is maintainer-only", () => {
     expect(byName.host!.default_member_permissions).toBe("0");
+    expect(byName.tailnet!.default_member_permissions).toBe("0");
     expect(byName.world!.default_member_permissions).toBeUndefined(); // /world download is for everyone
     expect(byName.status!.default_member_permissions).toBeUndefined();
   });

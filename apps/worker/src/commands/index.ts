@@ -6,6 +6,7 @@ import { modList } from "./mod-list";
 import { modpack } from "./modpack";
 import { setup } from "./setup";
 import { status } from "./status";
+import { revokeAction, tailnetRevoke } from "./tailnet-revoke";
 import { archiveAction, worldArchive } from "./world-archive";
 import { worldDownload } from "./world-download";
 import { newAction, worldNew } from "./world-new";
@@ -17,7 +18,8 @@ export const REGISTRY: Registry = {
     world: "Download, create, roll back and archive worlds",
     mod: "Mods in the active world",
     host: "The hosting session",
+    tailnet: "The Minecraft network",
   },
-  commands: [help, setup, status, join, modpack, modList, worldDownload, worldNew, worldRollback, worldArchive, worldRepin, hostRelease],
-  actions: [newAction, rollbackAction, archiveAction, repinAction, releaseAction],
+  commands: [help, setup, status, join, modpack, modList, worldDownload, worldNew, worldRollback, worldArchive, worldRepin, hostRelease, tailnetRevoke],
+  actions: [newAction, rollbackAction, archiveAction, repinAction, releaseAction, revokeAction],
 };
