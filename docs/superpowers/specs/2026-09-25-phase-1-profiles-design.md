@@ -48,7 +48,7 @@ Two kinds of world must both work:
     { "modrinth": "waystones", "side": "both" },
     { "modrinth": "simple-voice-chat", "side": "both", "clientOptional": true },
     { "modrinth": "travelersbackpack", "side": "both", "version": "26.3-11.4.0" },
-    { "modrinth": "sodium", "side": "client-optional", "default": true }
+    { "modrinth": "sodium", "side": "client-optional" }
   ],
   "waiting": ["lootr", "carry-on"],
   "datapacks": ["vt:afk-display"],
@@ -62,18 +62,22 @@ Two kinds of world must both work:
 |---|---|---|
 | `server` | yes | no |
 | `both` | yes | `env.client = required`. With `clientOptional: true` it becomes `optional` instead. |
-| `client-optional` | no | `env.client = optional`, unticked unless the mod is marked `default: true` |
+| `client-optional` | no | `env.client = optional`. Prism shows it in the optional-mods checklist. The `.mrpack` format has no "ticked by default" flag, so profiles don't have one either. |
 
-A profile counts as Vanilla+ when no mod is `both` without `clientOptional`. `/modpack`
-uses this to tell players whether the pack is required (Phase 3).
+A world counts as Vanilla+ when no file in its lockfile, including dependencies pulled in
+automatically, is `both` without `clientOptional`. `/modpack` uses this to tell players
+whether the pack is required (Phase 3).
 
 ### Lockfile
 
 `profiles/<name>.lock.json` is generated and committed. It pins:
 
-- the Minecraft version, and the Fabric loader and installer versions
+- the Minecraft version; the Java major version, from Mojang's version metadata; and the
+  Fabric loader and installer versions
+- `profileHash`, a sha256 of the parsed profile. Build commands refuse a lockfile whose
+  hash doesn't match the current profile, and say to run `resolve` again.
 - for each file: the Modrinth project and version IDs, filename, URL, sha512, sha1, size,
-  side, `clientOptional`/`default`, and flags `auto` (pulled in as a dependency) and
+  side, `clientOptional`, and flags `auto` (pulled in as a dependency) and
   `prerelease`
 
 The same inputs always produce the same lockfile: entries are sorted, and the file contains
@@ -93,9 +97,9 @@ no timestamps.
 ### `adventure` (26.3, modpack required)
 
 - **Server:** Fabric API, Lithium, FerriteCore, C2ME, ScalableLux, VMP, Chunky, spark,
-  Universal Graves (replaces Gravestone), Skin Restorer, Villager Config, Dungeons and
+  Clumps, Universal Graves (replaces Gravestone), Skin Restorer, Villager Config, Dungeons and
   Taverns, Incendium, Nullscape, Towns and Towers.
-- **Both:** Bartering Station, Clumps, Easy Anvils, Nature's Compass, Storage Drawers,
+- **Both:** Bartering Station, Easy Anvils, Nature's Compass, Storage Drawers,
   Tom's Simple Storage, Trade Cycling, Traveler's Backpack, Waystones, Underground
   Villages, Hammers and Excavators (`hammers-and-excavators-miners-dream`), and Simple
   Voice Chat (client optional).
@@ -110,8 +114,13 @@ Exact sides come from checking each mod's Modrinth `client_side`/`server_side` m
 during implementation. The lists above are the starting point.
 
 Structure mods added to a world later (from `waiting`) only affect chunks that haven't been
-generated yet, so worlds are pre-generated only to a modest radius (Chunky, 2,000 blocks by
-default).
+generated yet, so worlds should be pre-generated only to a modest radius (Chunky, 2,000
+blocks). The agent automates this on a world's first start in Phase 2. In Phase 1 it's a
+manual `/chunky` command.
+
+Vanilla Tweaks hasn't released 26.3 datapacks yet, so the 26.2 ones are used for now.
+The server may list them as made for an older version. The Phase 1 checklist confirms they
+are enabled in `/datapack list`.
 
 ## Network change
 
@@ -123,13 +132,14 @@ grant between `tag:mc-player` devices, and a policy test covers it.
 A Bun workspace:
 
 ```
-packages/profile/   schema, resolver, server builder, mrpack builder — pure TS, no CLI
-apps/agent/         mc-host. Phase 1 only adds the `profile` subcommands.
+packages/profile/   schema, API clients, resolver, lockfile, mrpack builder — pure TS; only
+                    fetch, WebCrypto, zod and fflate, so the Worker can import it
+apps/agent/         mc-host: download cache, server builder, run, CLI (uses node:fs)
 profiles/           *.json and *.lock.json
 ```
 
-The profile package takes a fetch function and a cache directory as parameters, so the
-Worker can reuse its schema and mrpack builder in Phase 2 and Phase 3.
+The profile package takes a fetch function as a parameter and never touches the
+filesystem. The Worker reuses its schema and mrpack builder in Phase 2 and Phase 3.
 
 ## Commands (Phase 1)
 
@@ -141,7 +151,9 @@ Worker can reuse its schema and mrpack builder in Phase 2 and Phase 3.
    `prerelease` flag. Respect a `version` pin.
 3. Resolve required dependencies recursively and mark them `auto`. A dependency inherits
    the side of the mod that needs it. If several mods need it, the widest side wins:
-   `both` beats `server`, and `server` beats `client-optional`.
+   The server flag is OR-ed, and the client need takes the highest of none, optional and
+   required. A dependency that Modrinth marks `unsupported` on one side is never placed on
+   that side, so a server-only library is never sent to clients.
 4. Fail if the Modrinth metadata declares an `incompatible` dependency between two mods.
 5. Write the lockfile.
 6. Check each `waiting` mod and report which ones now have a build.
@@ -211,7 +223,7 @@ All Modrinth requests send
   - the Sides-to-`env` mapping
   - the `.mrpack` index contents
   - that the same inputs always give the same lockfile
-- **`bun test --live`** (manual): resolve both real profiles against the live APIs.
+- **`LIVE=1 bun test live`** (manual): resolve both real profiles against the live APIs.
 - **Manual checklist** (this is Phase 1's "done when"):
   - [ ] `vanilla-plus` and `adventure` both resolve, and their lockfiles are committed.
   - [ ] `adventure` builds and boots on Fedora with Java 25.
