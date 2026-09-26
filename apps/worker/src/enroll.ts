@@ -15,6 +15,7 @@ export interface EnrollmentRow {
   created_at: number;
   expires_at: number;
   used_at: number | null;
+  reported_at: number | null;
 }
 
 const dash = (s: string) => `${s.slice(0, 4)}-${s.slice(4)}`;
@@ -38,7 +39,7 @@ export async function createEnrollment(db: D1Database, o: { discordId: string; n
     .prepare(
       `INSERT INTO enrollments (discord_id, name, code_hash, mode, created_at, expires_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
        ON CONFLICT (discord_id) DO UPDATE SET name = excluded.name, code_hash = excluded.code_hash, mode = excluded.mode,
-         created_at = excluded.created_at, expires_at = excluded.expires_at, used_at = NULL`,
+         created_at = excluded.created_at, expires_at = excluded.expires_at, used_at = NULL, reported_at = NULL`,
     )
     .bind(o.discordId, o.name, await hashToken(code), o.mode, o.now, o.now + CODE_MS)
     .run();
@@ -66,10 +67,16 @@ export async function consumeEnrollment(db: D1Database, row: EnrollmentRow, now:
   return r.meta.changes === 1;
 }
 
-/** A code used within DEVICE_WINDOW_MS, for the installer's device report. */
+/** A code used within DEVICE_WINDOW_MS whose device isn't reported yet, for the installer's device report. */
 export async function recentlyUsedEnrollment(db: D1Database, raw: string, now: number): Promise<EnrollmentRow | null> {
   const row = await byCode(db, raw);
-  return row && row.used_at !== null && now - row.used_at <= DEVICE_WINDOW_MS ? row : null;
+  return row && row.used_at !== null && row.reported_at === null && now - row.used_at <= DEVICE_WINDOW_MS ? row : null;
+}
+
+/** Take the code's one device report. False if another report got there first. */
+export async function claimDeviceReport(db: D1Database, row: EnrollmentRow, now: number): Promise<boolean> {
+  const r = await db.prepare("UPDATE enrollments SET reported_at = ?1 WHERE code_hash = ?2 AND reported_at IS NULL").bind(now, row.code_hash).run();
+  return r.meta.changes === 1;
 }
 
 /** "mc-" + the username in [a-z0-9-], at most 40 characters in all. */

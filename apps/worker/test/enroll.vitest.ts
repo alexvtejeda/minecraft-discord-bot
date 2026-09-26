@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { tailnetHostname } from "../src/enroll";
-import { ALEX, postInteraction, slash } from "./discord";
+import { ALEX, postInteraction, SAM, slash } from "./discord";
 import { call } from "./helpers";
 import { fakeTailscale } from "./tailscale";
 
@@ -144,6 +144,34 @@ describe("POST /enroll/device", () => {
     await call("POST", "/enroll", { body: { code, join: true } });
     await env.DB.prepare("UPDATE enrollments SET used_at = ?").bind(Date.now() - 16 * 60_000).run();
     expect((await call("POST", "/enroll/device", { body: { code, nodeId: "n1" } })).status).toBe(410);
+    expect(await devices()).toEqual([]);
+  });
+
+  it("takes one device report per code", async () => {
+    fakeTailscale();
+    const code = await setupCode();
+    await call("POST", "/enroll", { body: { code, join: true } });
+    await call("POST", "/enroll/device", { body: { code, nodeId: "nMine" } });
+    expect((await call("POST", "/enroll/device", { body: { code, nodeId: "nOther" } })).status).toBe(410);
+    expect(await devices()).toEqual([{ node_id: "nMine", discord_id: ALEX, hostname: "mc-alex-v-t" }]);
+  });
+
+  it("won't move someone else's device onto this person", async () => {
+    fakeTailscale();
+    await env.DB.prepare("INSERT INTO devices (node_id, discord_id, hostname, created_at) VALUES ('nSams', ?, 'mc-sam', 1)").bind(SAM).run();
+    const code = await setupCode();
+    await call("POST", "/enroll", { body: { code, join: true } });
+    const r = await call("POST", "/enroll/device", { body: { code, nodeId: "nSams" } });
+    expect(r.status).toBe(409);
+    expect(await devices()).toEqual([{ node_id: "nSams", discord_id: SAM, hostname: "mc-sam" }]);
+  });
+
+  it("refuses a device that isn't a tagged Minecraft device", async () => {
+    fakeTailscale({ deviceTags: { nMaintainer: [], nGone: null } });
+    const code = await setupCode();
+    await call("POST", "/enroll", { body: { code, join: true } });
+    expect((await call("POST", "/enroll/device", { body: { code, nodeId: "nMaintainer" } })).status).toBe(409);
+    expect((await call("POST", "/enroll/device", { body: { code, nodeId: "nGone" } })).status).toBe(409);
     expect(await devices()).toEqual([]);
   });
 

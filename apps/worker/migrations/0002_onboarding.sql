@@ -7,7 +7,9 @@ CREATE TABLE enrollments (
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
   -- Set when the installer redeems the code; /enroll/device accepts it for 15 minutes after.
-  used_at INTEGER
+  used_at INTEGER,
+  -- Set by the one device report each redemption gets.
+  reported_at INTEGER
 );
 
 -- Tailnet devices the installer reported, so /tailnet revoke deletes exactly these.

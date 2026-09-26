@@ -36,7 +36,10 @@ function Api($path, $body) {
 function TsStatus {
   $ErrorActionPreference = 'Continue'
   if (-not (Test-Path $TsExe)) { return $null }
-  try { return (& $TsExe status --json 2>$null | Out-String | ConvertFrom-Json) } catch { return $null }
+  # Before the service answers, there's no output, and 5.1's ConvertFrom-Json errors on an empty string.
+  $out = & $TsExe status --json 2>$null | Out-String
+  if (-not $out -or -not $out.Trim()) { return $null }
+  try { return (ConvertFrom-Json $out -ErrorAction Stop) } catch { return $null }
 }
 
 function OnMinecraftNetwork($st) {
@@ -120,9 +123,14 @@ exit 0
     }
   }
 
-  # 5. Report this device, so a maintainer can remove it later
+  # 5. Report this device, so a maintainer can remove it later. Setup goes on without it.
   $st = TsStatus
-  Api '/enroll/device' @{ code = $Code; nodeId = $st.Self.ID } | Out-Null
+  try {
+    if (-not ($st -and $st.Self -and $st.Self.ID)) { throw "Tailscale didn't say which device this is." }
+    Api '/enroll/device' @{ code = $Code; nodeId = $st.Self.ID } | Out-Null
+  } catch {
+    Write-Host "Couldn't register this PC with the bot, so tell a maintainer: $($_.Exception.Message)" -ForegroundColor Yellow
+  }
 
   # 6. Hosting
   if ($isHost) {

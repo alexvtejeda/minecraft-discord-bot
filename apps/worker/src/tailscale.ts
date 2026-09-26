@@ -52,6 +52,16 @@ export async function mintAuthKey(env: Creds, description: string): Promise<stri
   return key;
 }
 
+/** The device's tags, or null if Tailscale doesn't know the device. */
+export async function deviceTags(env: Creds, nodeId: string): Promise<string[] | null> {
+  const token = await accessToken(env);
+  const res = await send(`${API}/device/${encodeURIComponent(nodeId)}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await refused(`looking up device ${nodeId}`, res);
+  const { tags } = (await res.json()) as { tags?: string[] };
+  return tags ?? [];
+}
+
 /** Remove a device from the tailnet. One that's already gone counts as removed. */
 export async function deleteDevice(env: Creds, nodeId: string): Promise<void> {
   const token = await accessToken(env);

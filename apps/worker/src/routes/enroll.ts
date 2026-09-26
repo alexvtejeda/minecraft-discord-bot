@@ -1,14 +1,15 @@
 import { EnrollDeviceRequestSchema, EnrollRequestSchema, type EnrollResponse, type Ok } from "@mc/protocol";
 import { Hono } from "hono";
 import script from "../../../../scripts/install.ps1";
-import { consumeEnrollment, normalizeCode, pendingEnrollment, recentlyUsedEnrollment, tailnetHostname, type Mode } from "../enroll";
+import { claimDeviceReport, consumeEnrollment, normalizeCode, pendingEnrollment, recentlyUsedEnrollment, tailnetHostname, type Mode } from "../enroll";
 import type { AppEnv } from "../env";
 import { ApiError, readBody } from "../errors";
-import { mintAuthKey, TailscaleError } from "../tailscale";
+import { deviceTags, mintAuthKey, PLAYER_TAG, TailscaleError } from "../tailscale";
 import { ensurePlayer, mintToken } from "../users";
 
 export const EXPIRED = "This setup link expired. Run /setup in Discord again.";
 export const NO_KEY = "Couldn't create your network key. Try again in a minute. If it keeps failing, tell a maintainer.";
+export const NOT_YOURS = "This PC's Tailscale device isn't one this setup link can claim. Ask a maintainer for help.";
 
 /** A PowerShell single-quoted string literal. */
 const psQuote = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -61,9 +62,22 @@ enroll.post("/device", async (c) => {
   const now = Date.now();
   const row = await recentlyUsedEnrollment(c.env.DB, req.code, now);
   if (!row) throw new ApiError("expired", EXPIRED);
+  // Revoke deletes what's recorded here, so a code may only claim a Minecraft device nobody else has.
+  const owner = await c.env.DB.prepare("SELECT discord_id FROM devices WHERE node_id = ?").bind(req.nodeId).first<string>("discord_id");
+  if (owner !== null && owner !== row.discord_id) throw new ApiError("conflict", NOT_YOURS);
+  let tags: string[] | null;
+  try {
+    tags = await deviceTags(c.env, req.nodeId);
+  } catch (err) {
+    if (!(err instanceof TailscaleError)) throw err;
+    console.error(err.message);
+    throw new ApiError("upstream", "Couldn't check this PC with Tailscale. Tell a maintainer.");
+  }
+  if (!tags?.includes(PLAYER_TAG)) throw new ApiError("conflict", NOT_YOURS);
+  if (!(await claimDeviceReport(c.env.DB, row, now))) throw new ApiError("expired", EXPIRED);
   await c.env.DB.prepare(
     `INSERT INTO devices (node_id, discord_id, hostname, created_at) VALUES (?1, ?2, ?3, ?4)
-     ON CONFLICT (node_id) DO UPDATE SET discord_id = excluded.discord_id, hostname = excluded.hostname`,
+     ON CONFLICT (node_id) DO UPDATE SET hostname = excluded.hostname WHERE devices.discord_id = excluded.discord_id`,
   )
     .bind(req.nodeId, row.discord_id, tailnetHostname(row.name, row.discord_id), now)
     .run();

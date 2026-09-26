@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { deleteDevice, mintAuthKey, TailscaleError } from "../src/tailscale";
+import { deleteDevice, deviceTags, mintAuthKey, TailscaleError } from "../src/tailscale";
 import { fakeTailscale } from "./tailscale";
 
 afterEach(() => vi.restoreAllMocks());
@@ -50,5 +50,18 @@ describe("deleteDevice", () => {
   it("throws TailscaleError on other failures", async () => {
     fakeTailscale({ deleteStatus: { broken: 500 } });
     await expect(deleteDevice(env, "broken")).rejects.toThrow(TailscaleError);
+  });
+});
+
+describe("deviceTags", () => {
+  it("reads a device's tags", async () => {
+    const calls = fakeTailscale({ deviceTags: { nMine: ["tag:mc-player"] } });
+    expect(await deviceTags(env, "nMine")).toEqual(["tag:mc-player"]);
+    expect(calls[1]).toMatchObject({ url: "https://api.tailscale.com/api/v2/device/nMine", method: "GET", auth: "Bearer ts-access" });
+  });
+
+  it("is null for a device Tailscale doesn't know", async () => {
+    fakeTailscale({ deviceTags: { nGone: null } });
+    expect(await deviceTags(env, "nGone")).toBeNull();
   });
 });

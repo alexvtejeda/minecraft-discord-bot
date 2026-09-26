@@ -48,7 +48,8 @@ CREATE TABLE enrollments (
   mode TEXT NOT NULL CHECK (mode IN ('play', 'host')),
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
-  used_at INTEGER                    -- set on redemption; /enroll/device accepts it for 15 minutes after
+  used_at INTEGER,                   -- set on redemption; /enroll/device accepts it for 15 minutes after
+  reported_at INTEGER                -- set by the one device report each redemption gets
 );
 
 CREATE TABLE devices (
@@ -94,8 +95,12 @@ an existing token.
    `[a-z0-9-]` only, at most 40 characters.
 
 **`POST /enroll/device { code, nodeId }`**
-- Accepted only when the code's `used_at` is within the last 15 minutes. It inserts or
-  replaces the `devices` row.
+- Accepted once per redemption (`reported_at`), and only when the code's `used_at` is
+  within the last 15 minutes.
+- Revoke deletes what's recorded here, so the node must be tagged `tag:mc-player`
+  (checked with Tailscale's `GET /device/{id}`) and must not already be on record for
+  someone else. Otherwise it answers 409. The installer carries on without the report
+  and tells the user to let a maintainer know.
 
 **`/tailnet revoke <user>`** (maintainer, with a Confirm button, registered hidden like `/host`)
 1. Set `users.revoked_at`, so their hosting token stops working, and delete their pending
