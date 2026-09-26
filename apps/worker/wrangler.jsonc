@@ -1,14 +1,24 @@
 {
-  "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "mc-bot",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-09-01",
-  "d1_databases": [
-    { "binding": "DB", "database_name": "mc-bot", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
-  ],
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "mc-bot" }],
-  "vars": {
-    "R2_ACCOUNT_ID": "set-in-task-16",
-    "R2_BUCKET_NAME": "mc-bot"
-  }
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "mc-bot",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "mc-bot",
+			"database_id": "e42fca9f-ba2e-49de-ac0b-cd9d994e34ab",
+			"migrations_dir": "migrations"
+		},
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "mc-bot"
+		}
+	],
+	"vars": {
+		"R2_ACCOUNT_ID": "663d004e8e50dcaa58dddbd1403d8f3f",
+		"R2_BUCKET_NAME": "mc-bot"
+	}
 }
