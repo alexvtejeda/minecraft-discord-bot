@@ -1,0 +1,341 @@
+Downloading Minecraft server
+Installing Fabric Loader 0.19.5(26.3) on the server
+Downloading required files
+Downloading library org.ow2.asm:asm:9.10.1
+Downloading library org.ow2.asm:asm-analysis:9.10.1
+Downloading library org.ow2.asm:asm-commons:9.10.1
+Downloading library org.ow2.asm:asm-tree:9.10.1
+Downloading library org.ow2.asm:asm-util:9.10.1
+Downloading library net.fabricmc:sponge-mixin:0.17.4+mixin.0.8.7
+Downloading library net.fabricmc:fabric-loader:0.19.5
+Generating server launch JAR
+Unpacking 26.3/server-26.3.jar (versions:26.3) to versions/26.3/server-26.3.jar
+Unpacking at/yawk/lz4/lz4-java/1.10.1/lz4-java-1.10.1.jar (libraries:at.yawk.lz4:lz4-java:1.10.1) to libraries/at/yawk/lz4/lz4-java/1.10.1/lz4-java-1.10.1.jar
+Unpacking com/azure/azure-json/1.4.0/azure-json-1.4.0.jar (libraries:com.azure:azure-json:1.4.0) to libraries/com/azure/azure-json/1.4.0/azure-json-1.4.0.jar
+Unpacking com/github/oshi/oshi-core/6.9.0/oshi-core-6.9.0.jar (libraries:com.github.oshi:oshi-core:6.9.0) to libraries/com/github/oshi/oshi-core/6.9.0/oshi-core-6.9.0.jar
+Unpacking com/google/code/gson/gson/2.14.0/gson-2.14.0.jar (libraries:com.google.code.gson:gson:2.14.0) to libraries/com/google/code/gson/gson/2.14.0/gson-2.14.0.jar
+Unpacking com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar (libraries:com.google.guava:failureaccess:1.0.3) to libraries/com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar
+Unpacking com/google/guava/guava/33.6.0-jre/guava-33.6.0-jre.jar (libraries:com.google.guava:guava:33.6.0-jre) to libraries/com/google/guava/guava/33.6.0-jre/guava-33.6.0-jre.jar
+Unpacking com/microsoft/azure/msal4j/1.24.1/msal4j-1.24.1.jar (libraries:com.microsoft.azure:msal4j:1.24.1) to libraries/com/microsoft/azure/msal4j/1.24.1/msal4j-1.24.1.jar
+Unpacking com/mojang/authlib/10.0.77/authlib-10.0.77.jar (libraries:com.mojang:authlib:10.0.77) to libraries/com/mojang/authlib/10.0.77/authlib-10.0.77.jar
+Unpacking com/mojang/brigadier/1.3.11/brigadier-1.3.11.jar (libraries:com.mojang:brigadier:1.3.11) to libraries/com/mojang/brigadier/1.3.11/brigadier-1.3.11.jar
+Unpacking com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar (libraries:com.mojang:datafixerupper:10.0.21) to libraries/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar
+Unpacking com/mojang/jtracy/1.14.38/jtracy-1.14.38.jar (libraries:com.mojang:jtracy:1.14.38) to libraries/com/mojang/jtracy/1.14.38/jtracy-1.14.38.jar
+Unpacking com/mojang/logging/1.7.12/logging-1.7.12.jar (libraries:com.mojang:logging:1.7.12) to libraries/com/mojang/logging/1.7.12/logging-1.7.12.jar
+Unpacking commons-io/commons-io/2.20.0/commons-io-2.20.0.jar (libraries:commons-io:commons-io:2.20.0) to libraries/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar
+Unpacking io/netty/netty-buffer/4.2.16.Final/netty-buffer-4.2.16.Final.jar (libraries:io.netty:netty-buffer:4.2.16.Final) to libraries/io/netty/netty-buffer/4.2.16.Final/netty-buffer-4.2.16.Final.jar
+Unpacking io/netty/netty-codec-base/4.2.16.Final/netty-codec-base-4.2.16.Final.jar (libraries:io.netty:netty-codec-base:4.2.16.Final) to libraries/io/netty/netty-codec-base/4.2.16.Final/netty-codec-base-4.2.16.Final.jar
+Unpacking io/netty/netty-codec-compression/4.2.16.Final/netty-codec-compression-4.2.16.Final.jar (libraries:io.netty:netty-codec-compression:4.2.16.Final) to libraries/io/netty/netty-codec-compression/4.2.16.Final/netty-codec-compression-4.2.16.Final.jar
+Unpacking io/netty/netty-codec-http/4.2.16.Final/netty-codec-http-4.2.16.Final.jar (libraries:io.netty:netty-codec-http:4.2.16.Final) to libraries/io/netty/netty-codec-http/4.2.16.Final/netty-codec-http-4.2.16.Final.jar
+Unpacking io/netty/netty-common/4.2.16.Final/netty-common-4.2.16.Final.jar (libraries:io.netty:netty-common:4.2.16.Final) to libraries/io/netty/netty-common/4.2.16.Final/netty-common-4.2.16.Final.jar
+Unpacking io/netty/netty-handler/4.2.16.Final/netty-handler-4.2.16.Final.jar (libraries:io.netty:netty-handler:4.2.16.Final) to libraries/io/netty/netty-handler/4.2.16.Final/netty-handler-4.2.16.Final.jar
+Unpacking io/netty/netty-resolver/4.2.16.Final/netty-resolver-4.2.16.Final.jar (libraries:io.netty:netty-resolver:4.2.16.Final) to libraries/io/netty/netty-resolver/4.2.16.Final/netty-resolver-4.2.16.Final.jar
+Unpacking io/netty/netty-transport/4.2.16.Final/netty-transport-4.2.16.Final.jar (libraries:io.netty:netty-transport:4.2.16.Final) to libraries/io/netty/netty-transport/4.2.16.Final/netty-transport-4.2.16.Final.jar
+Unpacking io/netty/netty-transport-classes-epoll/4.2.16.Final/netty-transport-classes-epoll-4.2.16.Final.jar (libraries:io.netty:netty-transport-classes-epoll:4.2.16.Final) to libraries/io/netty/netty-transport-classes-epoll/4.2.16.Final/netty-transport-classes-epoll-4.2.16.Final.jar
+Unpacking io/netty/netty-transport-classes-kqueue/4.2.16.Final/netty-transport-classes-kqueue-4.2.16.Final.jar (libraries:io.netty:netty-transport-classes-kqueue:4.2.16.Final) to libraries/io/netty/netty-transport-classes-kqueue/4.2.16.Final/netty-transport-classes-kqueue-4.2.16.Final.jar
+Unpacking io/netty/netty-transport-native-epoll/4.2.16.Final/netty-transport-native-epoll-4.2.16.Final-linux-x86_64.jar (libraries:io.netty:netty-transport-native-epoll:4.2.16.Final:linux-x86_64) to libraries/io/netty/netty-transport-native-epoll/4.2.16.Final/netty-transport-native-epoll-4.2.16.Final-linux-x86_64.jar
+Unpacking io/netty/netty-transport-native-epoll/4.2.16.Final/netty-transport-native-epoll-4.2.16.Final-linux-aarch_64.jar (libraries:io.netty:netty-transport-native-epoll:4.2.16.Final:linux-aarch_64) to libraries/io/netty/netty-transport-native-epoll/4.2.16.Final/netty-transport-native-epoll-4.2.16.Final-linux-aarch_64.jar
+Unpacking io/netty/netty-transport-native-kqueue/4.2.16.Final/netty-transport-native-kqueue-4.2.16.Final-osx-x86_64.jar (libraries:io.netty:netty-transport-native-kqueue:4.2.16.Final:osx-x86_64) to libraries/io/netty/netty-transport-native-kqueue/4.2.16.Final/netty-transport-native-kqueue-4.2.16.Final-osx-x86_64.jar
+Unpacking io/netty/netty-transport-native-kqueue/4.2.16.Final/netty-transport-native-kqueue-4.2.16.Final-osx-aarch_64.jar (libraries:io.netty:netty-transport-native-kqueue:4.2.16.Final:osx-aarch_64) to libraries/io/netty/netty-transport-native-kqueue/4.2.16.Final/netty-transport-native-kqueue-4.2.16.Final-osx-aarch_64.jar
+Unpacking io/netty/netty-transport-native-unix-common/4.2.16.Final/netty-transport-native-unix-common-4.2.16.Final.jar (libraries:io.netty:netty-transport-native-unix-common:4.2.16.Final) to libraries/io/netty/netty-transport-native-unix-common/4.2.16.Final/netty-transport-native-unix-common-4.2.16.Final.jar
+Unpacking it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar (libraries:it.unimi.dsi:fastutil:8.5.18) to libraries/it/unimi/dsi/fastutil/8.5.18/fastutil-8.5.18.jar
+Unpacking net/java/dev/jna/jna/5.17.0/jna-5.17.0.jar (libraries:net.java.dev.jna:jna:5.17.0) to libraries/net/java/dev/jna/jna/5.17.0/jna-5.17.0.jar
+Unpacking net/java/dev/jna/jna-platform/5.17.0/jna-platform-5.17.0.jar (libraries:net.java.dev.jna:jna-platform:5.17.0) to libraries/net/java/dev/jna/jna-platform/5.17.0/jna-platform-5.17.0.jar
+Unpacking net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar (libraries:net.sf.jopt-simple:jopt-simple:5.0.4) to libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar
+Unpacking org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar (libraries:org.apache.commons:commons-lang3:3.20.0) to libraries/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar
+Unpacking org/apache/logging/log4j/log4j-api/2.26.0/log4j-api-2.26.0.jar (libraries:org.apache.logging.log4j:log4j-api:2.26.0) to libraries/org/apache/logging/log4j/log4j-api/2.26.0/log4j-api-2.26.0.jar
+Unpacking org/apache/logging/log4j/log4j-core/2.26.0/log4j-core-2.26.0.jar (libraries:org.apache.logging.log4j:log4j-core:2.26.0) to libraries/org/apache/logging/log4j/log4j-core/2.26.0/log4j-core-2.26.0.jar
+Unpacking org/apache/logging/log4j/log4j-slf4j2-impl/2.26.0/log4j-slf4j2-impl-2.26.0.jar (libraries:org.apache.logging.log4j:log4j-slf4j2-impl:2.26.0) to libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.26.0/log4j-slf4j2-impl-2.26.0.jar
+Unpacking org/joml/joml/1.10.9/joml-1.10.9.jar (libraries:org.joml:joml:1.10.9) to libraries/org/joml/joml/1.10.9/joml-1.10.9.jar
+Unpacking org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar (libraries:org.jspecify:jspecify:1.0.0) to libraries/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar
+Unpacking org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar (libraries:org.slf4j:slf4j-api:2.0.17) to libraries/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar
+Starting net.fabricmc.loader.impl.game.minecraft.BundlerClassPathCapture
+[03:32:11] [main/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.19.5
+[03:32:11] [main/INFO]: Mappings not present!
+[03:32:11] [main/WARN]: Warnings were found!
+ - Mod 'Forge Config API Port' (forgeconfigapiport) 26.3.1 recommends any version of modmenu, which is missing!
+	 - You should install any version of modmenu for the optimal experience.
+ - Mod 'VillagerConfig' (villagerconfig) 4.6.0 recommends any version of modmenu, which is missing!
+	 - You should install any version of modmenu for the optimal experience.
+[03:32:11] [main/INFO]: Loading 124 mods:
+	- balm 26.3.0.2
+	   \-- kuma_api 26.3.0.1
+	- barteringstation 26.3.0
+	- c2me 0.4.2-alpha.0.88+26.3
+	   |-- c2me-base 0.4.2-alpha.0.88+26.3
+	   |-- c2me-fixes-chunkio-threading-issues 0.4.2-alpha.0.88+26.3
+	   |-- c2me-fixes-general-threading-issues 0.4.2-alpha.0.88+26.3
+	   |-- c2me-fixes-worldgen-threading-issues 0.4.2-alpha.0.88+26.3
+	   |-- c2me-fixes-worldgen-vanilla-bugs 0.4.2-alpha.0.88+26.3
+	   |-- c2me-notickvd 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-allocs 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-chunkio 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-math 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-natives-math 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-scheduling 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-worldgen-general 0.4.2-alpha.0.88+26.3
+	   |-- c2me-opts-worldgen-vanilla 0.4.2-alpha.0.88+26.3
+	   |-- c2me-rewrites-chunk-serializer 0.4.2-alpha.0.88+26.3
+	   |-- c2me-rewrites-chunk-system 0.4.2-alpha.0.88+26.3
+	   |-- c2me-rewrites-chunkio 0.4.2-alpha.0.88+26.3
+	   |-- c2me-server-utils 0.4.2-alpha.0.88+26.3
+	   |-- c2me-threading-lighting 0.4.2-alpha.0.88+26.3
+	   |-- com_github_ben-manes_caffeine_caffeine 3.2.1
+	   |-- com_ibm_async_asyncutil 0.1.0
+	   |-- io_reactivex_rxjava3_rxjava 3.1.12
+	   |-- mixinsquared 0.3.7-beta.1
+	   |-- net_objecthunter_exp4j 0.4.8
+	   |-- org_jctools_jctools-core 4.0.5
+	   \-- org_reactivestreams_reactive-streams 1.0.4
+	- chunky 1.5.3
+	- cloth-config 26.3.159
+	   \-- cloth-basic-math 0.6.1
+	- clumps 26.3.2
+	- cristellib 3.1.13
+	   \-- blue_endless_jankson 1.2.3
+	- easyanvils 26.3.0
+	- fabric-api 0.161.0+26.3
+	   |-- fabric-advancement-api-v1 1.0.0+38c7a2d55d
+	   |-- fabric-api-base 2.0.6+fcdff87f5d
+	   |-- fabric-api-lookup-api-v1 2.0.24+3434d6d95d
+	   |-- fabric-biome-api-v1 20.0.9+74ed1ea55d
+	   |-- fabric-block-api-v1 3.1.0+0ae6f9115d
+	   |-- fabric-block-getter-api-v2 2.0.9+3434d6d95d
+	   |-- fabric-command-api-v2 3.1.2+fcdff87f5d
+	   |-- fabric-content-registries-v0 15.0.4+74ed1ea55d
+	   |-- fabric-convention-tags-v2 4.10.3+6b5b47fd5d
+	   |-- fabric-crash-report-info-v1 1.0.7+fcdff87f5d
+	   |-- fabric-creative-tab-api-v1 5.0.21+fcdff87f5d
+	   |-- fabric-data-attachment-api-v1 2.2.30+3434d6d95d
+	   |-- fabric-data-generation-api-v1 27.2.4+427eab975d
+	   |-- fabric-debug-api-v1 1.0.4+3434d6d95d
+	   |-- fabric-dimensions-v1 5.1.19+47f74c985d
+	   |-- fabric-entity-events-v1 6.0.4+3434d6d95d
+	   |-- fabric-events-interaction-v0 5.3.6+3434d6d95d
+	   |-- fabric-game-rule-api-v1 4.0.10+3434d6d95d
+	   |-- fabric-item-api-v1 14.7.0+cf6bc2db5d
+	   |-- fabric-lifecycle-events-v1 4.1.9+ffef5f675d
+	   |-- fabric-loot-api-v3 4.0.8+4068fd645d
+	   |-- fabric-menu-api-v1 2.0.27+ed66f0a35d
+	   |-- fabric-message-api-v1 7.0.10+3434d6d95d
+	   |-- fabric-networking-api-v1 6.3.8+fcdff87f5d
+	   |-- fabric-object-builder-api-v1 24.1.9+3434d6d95d
+	   |-- fabric-particles-v1 5.0.24+3434d6d95d
+	   |-- fabric-permission-api-v1 1.0.8+fcdff87f5d
+	   |-- fabric-recipe-api-v1 10.0.8+fcdff87f5d
+	   |-- fabric-registry-sync-v0 8.0.1+fcdff87f5d
+	   |-- fabric-rendering-fluids-v1 6.0.6+3434d6d95d
+	   |-- fabric-resource-conditions-api-v1 6.1.5+3434d6d95d
+	   |-- fabric-resource-loader-v0 3.3.26+4fc5413f5d
+	   |-- fabric-resource-loader-v1 3.0.4+fcdff87f5d
+	   |-- fabric-serialization-api-v1 2.0.7+74ed1ea55d
+	   |-- fabric-tag-api-v1 2.1.10+fcdff87f5d
+	   |-- fabric-transfer-api-v1 8.0.25+fcdff87f5d
+	   \-- fabric-transitive-access-wideners-v1 8.1.16+52268a0e5d
+	- fabricloader 0.19.5
+	   \-- mixinextras 0.5.5
+	- ferritecore 9.0.0
+	- forgeconfigapiport 26.3.1
+	   |-- com_electronwill_night-config_core 3.8.4
+	   \-- com_electronwill_night-config_toml 3.8.4
+	- hammersandexcavators 1.0.1-26.3
+	- incendium 5.5.2+26.3
+	- java 25
+	- lithium 0.26.1+mc26.3
+	- minecraft 26.3
+	- mr_dungeons_andtaverns 6.0.1
+	- naturescompass 26.3-2.5.1-fabric
+	- nullscape 2.0.0+26.3
+	- polymer-bundled 0.18.2+26.3
+	   |-- polymer-autohost 0.18.2+26.3
+	   |-- polymer-blocks 0.18.2+26.3
+	   |-- polymer-common 0.18.2+26.3
+	   |-- polymer-core 0.18.2+26.3
+	   |    |-- polymer-networking 0.18.2+26.3
+	   |    |    \-- polymer-common 0.18.2+26.3
+	   |    \-- polymer-registry-sync-manipulator 0.18.2+26.3
+	   |-- polymer-resource-pack 0.18.2+26.3
+	   |    \-- polymer-common 0.18.2+26.3
+	   |-- polymer-resource-pack-extras 0.18.2+26.3
+	   |-- polymer-sound-patcher 0.18.2+26.3
+	   \-- polymer-virtual-entity 0.18.2+26.3
+	        \-- polymer-common 0.18.2+26.3
+	- puzzleslib 26.3.4
+	- scalablelux 0.3.0-alpha.0.6+26.3
+	- shogi 26.3.0.2
+	   \-- shogi_api 26.3.0.2
+	- skinrestorer 2.11.0+26.3-fabric
+	   \-- org_mineskin_java-client 3.4.0
+	- spark 1.10.187
+	   \-- fabric-permissions-api-v0 0.7.0
+	- storagedrawers 26.3.0.0
+	- t_and_t 1.13.12
+	- toms_storage 2.12.1
+	- trade_cycling 1.0.22+26.3
+	   |-- fabric-api-base 2.0.6+fcdff87f5d
+	   |-- fabric-lifecycle-events-v1 4.1.9+ffef5f675d
+	   |-- fabric-networking-api-v1 6.3.8+fcdff87f5d
+	   \-- fabric-resource-loader-v1 3.0.4+fcdff87f5d
+	- travelersbackpack 11.4.0
+	- underground_villages 13.0.0
+	- universal-graves 3.13.0+26.3
+	   |-- common-protection-api 2.0.0
+	   |-- placeholder-api 3.2.0+26.3
+	   |-- predicate-api 0.10.0+26.3
+	   |-- server_translations_api 3.2.0+26.3
+	   \-- sgui 2.2.0+26.3
+	- villagerconfig 4.6.0
+	   \-- blue_endless_jankson 1.2.3
+	- vmp 0.2.0+beta.7.238+26.3
+	- voicechat 2.6.24+26.3
+	   \-- voicechat_api 2.6.24
+	- waystones 26.3.0.1
+[03:32:11] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/srv/mc/libraries/net/fabricmc/sponge-mixin/0.17.4+mixin.0.8.7/sponge-mixin-0.17.4+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.base.mixin
+[03:32:12] [main/INFO]: Updating config from 0 to 1
+[03:32:12] [main/INFO]: Updating config from 1 to 2
+[03:32:12] [main/INFO]: Updating config from 2 to 3
+[03:32:12] [main/INFO]: CPU name: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+[03:32:12] [main/INFO]: Detected 8 available physical CPUs, 16 available logical CPUs
+[03:32:12] [main/INFO]: Detected 8 available physical CPUs, 16 available logical CPUs
+[03:32:12] [main/INFO]: Global Executor Parallelism: 4 configured, 4 evaluated, 4 default evaluated
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.fixes.chunkio.threading_issues.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.fixes.general.threading_issues.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.fixes.worldgen.threading_issues.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.fixes.worldgen.vanilla_bugs.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.notickvd.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.allocs.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.chunkio.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.math.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.natives_math.mixin
+[03:32:12] [main/INFO]: Attempting to call native library. If your game crashes right after this point, native acceleration may not be available for your system.
+[03:32:12] [main/INFO]: Detected maximum supported ISA target: ICL_AVX512
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.scheduling.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.worldgen.general.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.opts.worldgen.vanilla.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.rewrites.chunk_serializer.mixin
+[03:32:12] [main/INFO]: Disabling com.ishland.c2me.rewrites.chunk_serializer.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.rewrites.chunksystem.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.rewrites.chunkio.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.server.utils.mixin
+[03:32:12] [main/INFO]: Initializing com.ishland.c2me.threading.lighting.mixin
+[03:32:12] [main/WARN]: Reference map 'clumps.refmap.json' for clumps.mixins.json could not be read. If this is a development environment you can ignore this message
+[03:32:12] [main/INFO]: Option 'mixin.experimental.entity.block_caching.suffocation' requires 'mixin.util.block_tracking=true' but found 'false'. Setting 'mixin.experimental.entity.block_caching.suffocation=false'.
+[03:32:12] [main/INFO]: Option 'mixin.world.chunk_ticking.random_block_ticking' requires 'mixin.util.block_tracking=true' but found 'false'. Setting 'mixin.world.chunk_ticking.random_block_ticking=false'.
+[03:32:12] [main/INFO]: Option 'mixin.experimental.entity.block_caching.block_support' requires 'mixin.util.block_tracking=true' but found 'false'. Setting 'mixin.experimental.entity.block_caching.block_support=false'.
+[03:32:12] [main/INFO]: Option 'mixin.experimental.entity.block_caching' requires 'mixin.util.block_tracking=true' but found 'false'. Setting 'mixin.experimental.entity.block_caching=false'.
+[03:32:12] [main/INFO]: Loaded configuration file for Lithium: 170 options available, 0 override(s) found.
+[03:32:12] [main/WARN]: Reference map 'skinrestorer.refmap.json' for skinrestorer.mixins.json could not be read. If this is a development environment you can ignore this message
+[03:32:12] [main/WARN]: Reference map 'skinrestorer.refmap.json' for skinrestorer.fabric.mixins.json could not be read. If this is a development environment you can ignore this message
+[03:32:12] [main/WARN]: Reference map 'villagerconfig.refmap.json' for villagerconfig-common.mixins.json could not be read. If this is a development environment you can ignore this message
+[03:32:12] [main/WARN]: Reference map 'villagerconfig.refmap.json' for villagerconfig-fabric.mixins.json could not be read. If this is a development environment you can ignore this message
+[03:32:12] [main/INFO]: Successfully started async appender with [SysOut, ServerGuiConsole, Tracy, File]
+[03:32:14] [main/WARN]: Error loading class: com/simibubi/create/content/kinetics/base/BlockBreakingKineticBlockEntity (java.lang.ClassNotFoundException: com/simibubi/create/content/kinetics/base/BlockBreakingKineticBlockEntity)
+[03:32:14] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafe (file:/srv/mc/libraries/org/joml/joml/1.10.9/joml-1.10.9.jar)
+WARNING: Please consider reporting this to the maintainers of class org.joml.MemUtil$MemUtilUnsafe
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[03:32:26] [main/INFO]: Mod proxy balm:permissions resolved as net.blay09.mods.balm.fabric.platform.compatibility.permissions.internal.FabricPermissionsAPIIntegration@426f3596
+[03:32:26] [main/INFO]: Constructing components for barteringstation:common
+[03:32:26] [main/INFO]: Constructing components for easyanvils:common
+[03:32:26] [main/INFO]: Hello Fabric world!
+[03:32:26] [main/INFO]: Registering mod items for hammersandexcavators
+[03:32:26] [main/INFO]: Registering item groups for hammersandexcavators
+[03:32:26] [main/INFO]: Constructing components for puzzleslib:common
+Sep 26, 2026 3:32:27 AM org.mineskin.ClientBuilder build
+WARNING: Creating MineSkinClient without API key - Please get an API key from https://account.mineskin.org/keys
+[03:32:27] [main/INFO]: Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[03:32:27] [main/INFO]: Tom's Storage Setup starting
+[03:32:28] [main/INFO]: Registered the FluidEffect with Unique ID of minecraft:water for Water (Fluid Amount Required: 81000) with the ID 0
+[03:32:28] [main/INFO]: Registered the FluidEffect with Unique ID of minecraft:lava for Lava (Fluid Amount Required: 81000) with the ID 1
+[03:32:28] [main/INFO]: Registered the FluidEffect with Unique ID of travelersbackpack:potion for block.travelersbackpack.potion_still (Fluid Amount Required: 27000) with the ID 2
+[03:32:28] [main/INFO]: Registered the FluidEffect with Unique ID of minecraft:milk for Air (Fluid Amount Required: 81000) with the ID 3
+[03:32:28] [main/INFO]: [voicechat] Compatibility version 20
+[03:32:28] [main/INFO]: [voicechat] Loading plugins
+[03:32:28] [main/INFO]: [voicechat] Loaded 0 plugin(s)
+[03:32:28] [main/INFO]: [voicechat] Initializing plugins
+[03:32:28] [main/INFO]: [voicechat] Initialized 0 plugin(s)
+[03:32:28] [main/INFO]: Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[03:32:29] [Worker-Main-2/INFO]: No existing world data, creating new world
+[03:32:30] [Worker-Main-2/ERROR]: No key layers in MapLike[{}]
+[03:32:31] [Worker-Main-13/INFO]: Loaded 2284 advancements
+[03:32:31] [main/ERROR]: Failed to load function nova_structures:structure_search/dnt/underground
+java.util.concurrent.CompletionException: java.lang.IllegalArgumentException: Whilst parsing command on line 19: Failed to parse structure: Failed to parse either. First: Not a tag id; Second: Failed to parse either. First: Not a list: "nova_structures:mineshaft_jaggedpeak"; Second: Failed to get element nova_structures:mineshaft_jaggedpeak from registry minecraft:worldgen/structure at position 116: ...on_check"}<--[HERE]
+	at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:323)
+	at java.base/java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:359)
+	at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:364)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1791)
+	at knot//net.minecraft.server.packs.resources.SimpleReloadInstance.lambda$prepareTasks$1(SimpleReloadInstance.java:51)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1753)
+	at java.base/java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1745)
+	at java.base/java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1662)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+Caused by: java.lang.IllegalArgumentException: Whilst parsing command on line 19: Failed to parse structure: Failed to parse either. First: Not a tag id; Second: Failed to parse either. First: Not a list: "nova_structures:mineshaft_jaggedpeak"; Second: Failed to get element nova_structures:mineshaft_jaggedpeak from registry minecraft:worldgen/structure at position 116: ...on_check"}<--[HERE]
+	at knot//net.minecraft.commands.functions.CommandFunction.fromLines(CommandFunction.java:81)
+	at knot//net.minecraft.server.ServerFunctionLibrary.lambda$reload$3(ServerFunctionLibrary.java:85)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1789)
+	... 8 more
+[03:32:31] [main/INFO]: Loaded 0 trades
+[03:32:31] [ForkJoinPool.commonPool-worker-1/INFO]: Loaded 58 translation keys
+[03:32:32] [main/INFO]: Applied 64 biome modifications to 63 of 79 new biomes in 13.51 ms
+[03:32:32] [Server thread/INFO]: Dispatching loading event for config barteringstation-server.toml
+[03:32:32] [Server thread/INFO]: Dispatching loading event for config easyanvils-server.toml
+[03:32:32] [Server thread/INFO]: Starting background profiler...
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:clay_ball = 1 minecraft:clay
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:snowball = 1 minecraft:snow_block
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:glowstone_dust = 1 minecraft:glowstone
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:brick = 1 minecraft:bricks
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:nether_brick = 1 minecraft:nether_bricks
+[03:32:32] [Server thread/INFO]: New compacting rule 9 minecraft:nether_wart = 1 minecraft:nether_wart_block
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:quartz = 1 minecraft:quartz_block
+[03:32:32] [Server thread/INFO]: New compacting rule 9 minecraft:melon_slice = 1 minecraft:melon
+[03:32:32] [Server thread/INFO]: New compacting rule 9 minecraft:bamboo = 1 minecraft:bamboo_block
+[03:32:32] [Server thread/INFO]: New compacting rule 4 minecraft:clay_ball = 1 minecraft:clay
+[03:32:32] [Server thread/INFO]: New denied storage item storagedrawers:creative_vending_upgrade
+[03:32:32] [Server thread/INFO]: Adding ore conversions for types: c:storage_blocks, c:ingots, c:nuggets
+[03:32:32] [Server thread/INFO]: Adding ore conversions for materials: aluminum, constantan, steel, uranium, invar, tin, lead, silver, platinum, nickel, osmium, bronze, electrum
+[03:32:32] [Server thread/INFO]: Starting minecraft server version 26.3
+[03:32:32] [Server thread/INFO]: Loading properties
+[03:32:32] [Server thread/INFO]: Default game type: SURVIVAL
+[03:32:32] [Server thread/INFO]: Generating keypair
+[03:32:32] [Server thread/INFO]: Starting Minecraft server on *:25565
+[03:32:33] [Server thread/INFO]: Preparing level "world"
+[03:32:33] [Server thread/INFO]: Enforcing safe world random access
+[03:32:33] [Server thread/INFO]: [STDOUT]: [ScalableLux] Lighting scaling is enabled in externally managed mode
+[03:32:33] [Server thread/INFO]: Changing watch distance to 10
+[03:32:33] [Server thread/INFO]: Using TheSpeedyObjectFactory without Unsafe
+[03:32:33] [Server thread/INFO]: Selecting global world spawn...
+[03:32:34] [Server thread/INFO]: Changing watch distance to 10
+[03:32:34] [Server thread/INFO]: Changing watch distance to 10
+[03:32:34] [Server thread/INFO]: Loading 0 persistent chunks...
+[03:32:34] [Server thread/INFO]: Preparing spawn area: 100%
+[03:32:34] [Server thread/INFO]: Time elapsed: 992 ms
+[03:32:34] [Server thread/INFO]: Done (1.534s)! For help, type "help"
+[03:32:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[03:32:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[03:32:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[03:32:35] [VoiceChatServerThread/INFO]: [voicechat] Voice chat server started at port 24454
+[03:32:35] [Server thread/INFO]: System chat: An unexpected error occurred while trying to execute that command
+[03:33:34] [Server thread/INFO]: Server empty for 60 seconds, pausing
+[03:35:07] [Server thread/INFO]: Stopping server
+[03:35:07] [Server thread/INFO]: Saving players
+[03:35:07] [Server thread/INFO]: Saving worlds
+[03:35:07] [Server thread/INFO]: ServerLevel[world]/minecraft:overworld: waiting for 729 chunks to unload
+[03:35:08] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[03:35:08] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[03:35:08] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[03:35:08] [C2ME Storage #3/INFO]: Storage thread Thread[#142,C2ME Storage #3,8,main] stopped
+[03:35:08] [C2ME Storage #2/INFO]: Storage thread Thread[#136,C2ME Storage #2,8,main] stopped
+[03:35:08] [C2ME Storage #1/INFO]: Storage thread Thread[#135,C2ME Storage #1,8,main] stopped
+[03:35:08] [C2ME Storage #6/INFO]: Storage thread Thread[#148,C2ME Storage #6,8,main] stopped
+[03:35:08] [C2ME Storage #5/INFO]: Storage thread Thread[#147,C2ME Storage #5,8,main] stopped
+[03:35:08] [C2ME Storage #4/INFO]: Storage thread Thread[#146,C2ME Storage #4,8,main] stopped
+[03:35:08] [C2ME Storage #9/INFO]: Storage thread Thread[#151,C2ME Storage #9,8,main] stopped
+[03:35:08] [C2ME Storage #8/INFO]: Storage thread Thread[#150,C2ME Storage #8,8,main] stopped
+[03:35:08] [C2ME Storage #7/INFO]: Storage thread Thread[#149,C2ME Storage #7,8,main] stopped
+[03:35:08] [Server thread/INFO]: Dispatching unloading event for config barteringstation-server.toml
+[03:35:08] [Server thread/INFO]: Dispatching unloading event for config easyanvils-server.toml

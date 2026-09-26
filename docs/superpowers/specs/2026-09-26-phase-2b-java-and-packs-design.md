@@ -117,51 +117,85 @@ mc-host profile check-packs <profile> --packs <dir> [--all] [--keep]
   Missing packs are an error, as in `build-server`.
 - With `--all`, every `.zip` in `--packs` is checked, whether the profile lists it or not.
   This is for trying out new pack releases before adding them to a profile.
-- With `--keep`, the scratch folder stays around for debugging; otherwise it's deleted.
+- With `--keep`, the scratch world and per-boot logs stay around for debugging.
 - The profile still decides the Minecraft version and the mods. Packs can depend on modded
   content, so a vanilla boot would give wrong answers.
 
+### What a real failure looks like
+
+A trial boot of `adventure` (26.3) with the ten Vanilla Tweaks 26.2 packs, on 2026-09-26,
+shaped this part. The logs are kept as test fixtures in `apps/agent/test/fixtures/packs/`.
+
+- **Mods log errors with no packs at all.** `nova_structures` logs `Failed to load function …`
+  and something logs `No key layers in MapLike[{}]` on every boot. The server starts anyway.
+- **The breaking error names no pack.** It's a `Registry loading errors:` block ending in
+  `Unbound values in registry ResourceKey[minecraft:root / minecraft:loot_table]: [graves:entities/player, more_mob_heads:entities/shulker]`,
+  followed by `Failed to load datapacks, can't proceed with server load`. Those loot tables
+  are *referenced* by `player head drops` and `double shulker shells` (they're meant for
+  packs that aren't installed). No pack provides them.
+- **One fatal error hides the rest.** Loading stops at the first registry failure.
+- Without those two packs, the other eight load cleanly: the only errors are the ones the
+  no-pack boot also has.
+
 ### Steps
 
-1. **Index packs.** For each zip, list its `data/<namespace>/<type>/<path>` entries into a
-   map from resource id (`namespace:path`) to pack filenames.
-2. **Build a scratch server** in `<cacheDir>/check-packs/<profile>/` with `buildServer`,
-   using the profile's lockfile and cached downloads, and then override
-   `level-name=check` and `level-type=minecraft:flat` in `server.properties`. Copy the packs
-   into `check/datapacks/` and accept the EULA there.
-3. **Boot.** Launch with `ensureJava`. Capture the log. When a line contains `Done (`,
-   send `stop`. Kill the process after 3 minutes.
-4. **Scan.** `logscan.ts` pulls out the datapack errors: ERROR/WARN lines about failing to
-   parse, load or reload data; `Failed to load datapacks`; and notices that a pack is
-   `incompatible`. A non-zero exit or a missing `Done (` line is also a failure.
-5. **Attribute.** An error line names a pack when it contains the pack's filename (`file/<name>.zip`)
-   or a resource id the index maps to that pack. A resource id that several packs provide
-   blames all of them.
-6. **Isolate.** If any error remains unattributed, wipe `check/` and boot again with each
-   pack alone. Packs that fail alone are named with their own errors. If every pack passes
-   alone, report "These packs only fail together" with the unattributed log lines. There's
-   no search for the exact combination.
+1. **Index packs.** For each zip, record its entry paths and the text of its `.json`,
+   `.mcfunction` and `.mcmeta` files.
+2. **Scratch server.** Build the profile into `<cacheDir>/check-packs/<profile>/` with
+   `buildServer`, with `datapacks: []` and the properties overridden to
+   `level-name=check` and `level-type=minecraft:flat`. The server files stay there between
+   runs so later checks don't download anything; only the `check/` world is wiped before
+   each boot. The EULA is asked for the same way as `profile run`.
+3. **Boot** (repeated below). Wipe `check/`, copy the chosen packs into `check/datapacks/`,
+   launch with the managed Java and capture stdout. When a line contains `Done (`, send
+   `stop`. Kill the process if it hasn't reached `Done (` or exited after 3 minutes, or
+   hasn't exited 1 minute after `stop`. Each boot's log is written to
+   `check-logs/<n>-<label>.log` in the scratch folder.
+4. **Scan.** An error is an `ERROR` line, or a `WARN` line about data packs, failed loads,
+   parsing, or an incompatible pack, together with its continuation lines, leaving out
+   stack frames (`at …`, `... N more`). `Failed to load datapacks, can't proceed` is not an
+   error of its own; it, a missing `Done (`, or a timeout means the boot **didn't start**.
+5. **Baseline.** The first boot has no packs. If it doesn't start, stop and say the server
+   is broken without any datapacks, with its last errors. Otherwise its errors are the
+   baseline: an error in a later boot whose text (without the timestamp and thread) matches
+   a baseline error is ignored.
+6. **Attribute.** For each new error line, collect its resource ids (`namespace:path`) and
+   `file/<name>.zip` mentions. A pack is blamed when the line names its file, when it
+   provides an id (it has `data/<namespace>/…/<path>.<ext>`), or when its text mentions an
+   id whose namespace isn't `minecraft`. `minecraft:` ids are too common in pack files to
+   count as mentions.
+7. **Repeat.** Boot all packs. If the boot starts with no new errors, stop. If some packs
+   were blamed, mark them failed with the lines that blamed them, and boot again without
+   them. This is how failures hidden behind a fatal error come out.
+8. **Isolate.** If a boot has new errors (or doesn't start) but blames no pack, boot each
+   remaining pack alone. Packs that fail alone are marked failed. If some did, go back to
+   step 7 with the rest. If none did, report "These packs only fail together" with the
+   unattributed lines, and stop. There's no search for the exact combination.
 
 ### Output
 
 ```
-Checking 10 datapacks against adventure (Minecraft 26.3.1)…
+Checking 10 datapacks against adventure (Minecraft 26.3)…
   ok    afk display v1.1.17 (MC 26.2).zip
-  FAIL  more effective tools v1.0.11 (MC 26.2).zip
-        [Server thread/ERROR]: Couldn't parse element vt:…
-        …
-2 of 10 packs would stop the server from starting.
+  FAIL  double shulker shells v1.3.17 (MC 26.2).zip
+        java.lang.IllegalStateException: Unbound values in registry ResourceKey[minecraft:root / minecraft:loot_table]: [graves:entities/player, more_mob_heads:entities/shulker]
+  …
+2 of 10 datapacks have errors. Logs: <scratch>/check-logs (3 boots)
 ```
 
-At most 3 log lines per pack. The exit code is 1 if anything failed, 0 otherwise.
+At most 3 lines per pack, each cut to 300 characters. The exit code is 1 if anything
+failed, 0 otherwise. The scratch world and logs are deleted at the end unless `--keep` is
+given; the server files stay.
 
 ### Code layout
 
 ```
 apps/agent/src/packs/
-  index.ts     zip → namespaces and resource ids
-  logscan.ts   pure: log lines → { errors, blamed: Map<pack, lines>, unattributed }
-  check.ts     orchestration; the boot is injected so tests don't run Java
+  index.ts     zip → entry paths and text
+  logscan.ts   pure: log lines → errors and "started"; baseline filtering; attribution
+  check.ts     the boot loop from steps 5–8; the boot is injected so tests don't run Java
+  boot.ts      the real boot: scratch world, packs, Java, timeouts, log capture
+  command.ts   mc-host profile check-packs
 ```
 
 `check.ts` reuses `buildServer`, `ensureEula`, `javaCommand` and the existing process
@@ -169,14 +203,13 @@ spawning, not new copies of them.
 
 ### Tests
 
-- `logscan`: fixtures made from real logs. Boot 26.3 with today's Vanilla Tweaks 26.2
-  zips in `datapacks/`, which are known to break, and save the log excerpts. Also cover a
-  clean log.
+- `logscan`: the three real logs in `apps/agent/test/fixtures/packs/` (no packs, all ten
+  packs, and the eight clean ones).
 - `index`: a small zip fixture with two namespaces.
 - `check`: a fake boot that returns scripted logs, covering a pack that fails alone,
   errors that only happen with packs combined, a timeout without `Done (`, and a clean run.
-- Acceptance: `mc-host profile check-packs adventure --packs datapacks --all` names the
-  broken VT 26.2 packs.
+- Acceptance: `mc-host profile check-packs adventure --packs datapacks --all` fails
+  exactly `player head drops` and `double shulker shells`, and passes the other eight.
 
 ## Carried over from 2a
 
