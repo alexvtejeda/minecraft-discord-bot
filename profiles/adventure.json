@@ -13,7 +13,8 @@
     "difficulty": "normal",
     "view-distance": 10,
     "simulation-distance": 8,
-    "motd": "Adventure on the tailnet"
+    "motd": "Adventure on the tailnet",
+    "white-list": false
   },
   "mods": [
     {
