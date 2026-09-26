@@ -27,6 +27,7 @@ import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
 import { javaFor } from "./java/runtime";
+import { cmdCheckPacks } from "./packs/command";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
 
@@ -182,6 +183,8 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
       return cmdBuildServer(cmd, deps);
     case "build-mrpack":
       return cmdBuildMrpack(cmd, deps);
+    case "check-packs":
+      return cmdCheckPacks(cmd, deps);
     case "run":
       return cmdRun(cmd, deps);
     case "start":

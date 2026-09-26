@@ -12,6 +12,10 @@ test("parses each profile subcommand", () => {
     kind: "build-mrpack", name: "adventure", out: "out.mrpack", profilesDir: "p",
   });
   expect(parseCommand(["profile", "run", "srv"])).toEqual({ kind: "run", dir: "srv" });
+  expect(parseCommand(["profile", "check-packs", "adventure", "--packs", "datapacks"])).toEqual({
+    kind: "check-packs", name: "adventure", packsDir: "datapacks", all: false, keep: false, profilesDir: "profiles",
+  });
+  expect(parseCommand(["profile", "check-packs", "a", "--packs", "d", "--all", "--keep"])).toMatchObject({ all: true, keep: true });
 });
 
 test("help for no args or --help", () => {
@@ -23,6 +27,7 @@ test("plain-English errors for missing args, unknown commands and flags", () => 
   expect(() => parseCommand(["profile", "build-server", "adventure"])).toThrow(/Missing <dir>/);
   expect(() => parseCommand(["profile", "frobnicate"])).toThrow(/Unknown command "profile frobnicate"/);
   expect(() => parseCommand(["profile", "resolve", "x", "--nope"])).toThrow(/Unknown option/);
+  expect(() => parseCommand(["profile", "check-packs", "adventure"])).toThrow(/Missing --packs <folder>/);
 });
 
 test("parses the hosting and admin commands", () => {

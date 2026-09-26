@@ -8,6 +8,7 @@ export type Command =
   | { kind: "resolve"; name: string; check?: string; addReady: boolean; profilesDir: string }
   | { kind: "build-server"; name: string; dir: string; packsDir?: string; force: boolean; profilesDir: string }
   | { kind: "build-mrpack"; name: string; out: string; profilesDir: string }
+  | { kind: "check-packs"; name: string; packsDir: string; all: boolean; keep: boolean; profilesDir: string }
   | { kind: "run"; dir: string }
   | { kind: "start" }
   | { kind: "stop" }
@@ -40,6 +41,10 @@ Profiles
       Write a modpack that Prism Launcher can import.
   profile run <dir>
       Start a server folder made by build-server.
+  profile check-packs <profile> --packs <folder> [--all] [--keep]
+      Boot a test server with the datapacks and name the ones with errors.
+      --all          check every zip in <folder>, not just the profile's datapacks
+      --keep         keep the test world and the boot logs
 
 Maintainers (need MC_WORKER_URL and MC_ADMIN_SECRET)
   admin world create <profile> [--name <name>] [--replace] [--import <server-folder>]
@@ -68,6 +73,8 @@ export function parseCommand(argv: string[]): Command {
         "add-ready": { type: "boolean", default: false },
         packs: { type: "string" },
         force: { type: "boolean", default: false },
+        all: { type: "boolean", default: false },
+        keep: { type: "boolean", default: false },
         profiles: { type: "string", default: "profiles" },
         name: { type: "string" },
         replace: { type: "boolean", default: false },
@@ -104,6 +111,15 @@ export function parseCommand(argv: string[]): Command {
           return { kind: "build-server", name: need(a, "<profile>"), dir: need(b, "<dir>"), packsDir: values.packs, force: values.force ?? false, profilesDir };
         case "build-mrpack":
           return { kind: "build-mrpack", name: need(a, "<profile>"), out: need(b, "<out.mrpack>"), profilesDir };
+        case "check-packs":
+          return {
+            kind: "check-packs",
+            name: need(a, "<profile>"),
+            packsDir: need(values.packs, "--packs <folder>"),
+            all: values.all ?? false,
+            keep: values.keep ?? false,
+            profilesDir,
+          };
         case "run":
           return { kind: "run", dir: need(a, "<dir>") };
         default:
