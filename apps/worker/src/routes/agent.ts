@@ -18,9 +18,11 @@ import { readBody } from "../errors";
 import { claimLease, heartbeatLease, isHeld, leaseInfo, readLease, releaseLease, requireSession } from "../lease";
 import { beginUpload, commitSnapshot } from "../snapshots";
 import { storageFor } from "../storage";
+import { versionCheck } from "../version";
 import { latestSnapshot, requireActiveWorld } from "../worlds";
 
 export const agent = new Hono<AppEnv>();
+agent.use("*", versionCheck);
 agent.use("*", agentAuth);
 
 agent.get("/manifest", async (c) => {

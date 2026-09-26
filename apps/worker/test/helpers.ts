@@ -94,6 +94,7 @@ export function envWith(over: Partial<Env>): Env {
     ANNOUNCE_CHANNEL_ID: env.ANNOUNCE_CHANNEL_ID,
     MAINTAINER_ROLE_ID: env.MAINTAINER_ROLE_ID,
     DISCORD_BOT_TOKEN: env.DISCORD_BOT_TOKEN,
+    MIN_AGENT_VERSION: env.MIN_AGENT_VERSION,
     ...over,
   };
 }
@@ -101,12 +102,15 @@ export function envWith(over: Partial<Env>): Env {
 export async function call(
   method: string,
   path: string,
-  o: { token?: string; admin?: boolean; body?: unknown; env?: Env } = {},
+  o: { token?: string; admin?: boolean; body?: unknown; env?: Env; agentVersion?: string | null } = {},
 ): Promise<{ status: number; body: any }> {
   const headers: Record<string, string> = {};
   if (o.admin) headers.Authorization = `Bearer ${ADMIN_SECRET}`;
   if (o.token) headers.Authorization = `Bearer ${o.token}`;
   if (o.body !== undefined) headers["Content-Type"] = "application/json";
+  // Always newer than MIN_AGENT_VERSION unless a test says otherwise.
+  const agentVersion = o.agentVersion === undefined ? "999.0.0" : o.agentVersion;
+  if (agentVersion !== null) headers["X-MC-Agent-Version"] = agentVersion;
   const ctx = createExecutionContext();
   const res = await app.request(path, { method, headers, body: o.body === undefined ? undefined : JSON.stringify(o.body) }, o.env ?? env, ctx);
   const text = await res.text();

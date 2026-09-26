@@ -16,9 +16,15 @@ export const ERROR_CODES = [
   "stale_rev",
   "conflict",
   "upload_missing",
+  "expired",
+  "outdated",
+  "upstream",
   "internal",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** Every agent request carries its mc-host version, so the Worker can turn away outdated ones. */
+export const AGENT_VERSION_HEADER = "X-MC-Agent-Version";
 
 export const LeaseInfoSchema = z.object({
   name: z.string(),

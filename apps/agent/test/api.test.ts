@@ -9,13 +9,16 @@ import {
   OfflineError,
   StaleRevError,
 } from "../src/host/api";
+import { VERSION } from "../src/version";
 
 type Seen = { url: string; method: string; auth: string | null; body: unknown };
+const versions: (string | null)[] = [];
 function fakeFetch(reply: (url: string) => Response | Promise<Response>): { fetch: Fetch; seen: Seen[] } {
   const seen: Seen[] = [];
   const fetch: Fetch = async (url, init) => {
     const headers = new Headers(init?.headers);
     seen.push({ url, method: init?.method ?? "GET", auth: headers.get("Authorization"), body: init?.body ? JSON.parse(String(init.body)) : undefined });
+    versions.push(headers.get("X-MC-Agent-Version"));
     return reply(url);
   };
   return { fetch, seen };
@@ -34,6 +37,15 @@ test("commit returns the new rev", async () => {
   const { fetch } = fakeFetch(() => json({ rev: 4 }));
   const api = createAgentApi({ workerUrl: "https://w.test", token: "t", fetch });
   expect(await api.commit({ sessionId: "s".repeat(16), rev: 4, key: "k", size: 1, sha256: SHA })).toBe(4);
+});
+
+test("every request says which mc-host version sent it", async () => {
+  versions.length = 0;
+  const { fetch } = fakeFetch(() => json({ rev: 4 }));
+  const api = createAgentApi({ workerUrl: "https://w.test", token: "t", fetch });
+  await api.commit({ sessionId: "s".repeat(16), rev: 4, key: "k", size: 1, sha256: SHA });
+  expect(versions).toEqual([VERSION]);
+  expect(VERSION).toMatch(/^\d+\.\d+\.\d+$/);
 });
 
 test("lease_held becomes LeaseHeldError with the spec's sentence", async () => {

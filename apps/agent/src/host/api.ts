@@ -1,5 +1,6 @@
 import { UserError, type Fetch } from "@mc/profile";
 import {
+  AGENT_VERSION_HEADER,
   AdminStatusSchema,
   ClaimResponseSchema,
   CommitResponseSchema,
@@ -25,6 +26,7 @@ import {
   type UploadUrlRequest,
 } from "@mc/protocol";
 import type { z } from "zod";
+import { VERSION } from "../version";
 
 /** Someone else holds the lease. */
 export class LeaseHeldError extends UserError {
@@ -58,7 +60,11 @@ async function request<T>(c: Client, method: "GET" | "POST", path: string, schem
   try {
     res = await c.fetch(`${c.base}${path}`, {
       method,
-      headers: { Authorization: `Bearer ${c.secret}`, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      headers: {
+        Authorization: `Bearer ${c.secret}`,
+        [AGENT_VERSION_HEADER]: VERSION,
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (err) {

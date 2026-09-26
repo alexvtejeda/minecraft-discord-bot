@@ -16,6 +16,8 @@ export interface Env {
   ANNOUNCE_CHANNEL_ID: string;
   MAINTAINER_ROLE_ID: string;
   DISCORD_BOT_TOKEN: string;
+  /** Agents older than this (or sending no version) get 426 and are told to update. */
+  MIN_AGENT_VERSION: string;
 }
 
 export type AppEnv = { Bindings: Env; Variables: { userId: string; userName: string } };

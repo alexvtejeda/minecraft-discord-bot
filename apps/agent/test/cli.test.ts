@@ -23,6 +23,11 @@ test("help for no args or --help", () => {
   expect(parseCommand(["--help"])).toEqual({ kind: "help" });
 });
 
+test("--version and version print the version", () => {
+  expect(parseCommand(["--version"])).toEqual({ kind: "version" });
+  expect(parseCommand(["version"])).toEqual({ kind: "version" });
+});
+
 test("plain-English errors for missing args, unknown commands and flags", () => {
   expect(() => parseCommand(["profile", "build-server", "adventure"])).toThrow(/Missing <dir>/);
   expect(() => parseCommand(["profile", "frobnicate"])).toThrow(/Unknown command "profile frobnicate"/);

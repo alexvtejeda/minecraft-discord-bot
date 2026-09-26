@@ -17,6 +17,7 @@ export type Command =
   | { kind: "admin-token-mint"; discordId: string; name: string }
   | { kind: "admin-lease-release" }
   | { kind: "admin-status" }
+  | { kind: "version" }
   | { kind: "help" };
 
 export const USAGE = `mc-host <command>
@@ -28,6 +29,8 @@ Hosting
       How to stop hosting.
   status
       Show the active world and who is hosting.
+  version
+      Print mc-host's version.
 
 Profiles
   profile resolve <profile> [--check <mc-version>] [--add-ready]
@@ -79,6 +82,7 @@ export function parseCommand(argv: string[]): Command {
         name: { type: "string" },
         replace: { type: "boolean", default: false },
         import: { type: "string" },
+        version: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
       },
     });
@@ -87,6 +91,7 @@ export function parseCommand(argv: string[]): Command {
   }
   const { values, positionals } = parsed;
   const [group, sub, a, b, c] = positionals;
+  if (values.version || group === "version") return { kind: "version" };
   if (values.help || !group) return { kind: "help" };
   const profilesDir = values.profiles ?? "profiles";
   const need = (v: string | undefined, what: string) => {

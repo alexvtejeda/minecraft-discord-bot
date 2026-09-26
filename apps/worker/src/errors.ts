@@ -2,7 +2,7 @@ import type { ErrorBody, ErrorCode, LeaseInfo } from "@mc/protocol";
 import type { Context } from "hono";
 import type { z } from "zod";
 
-const STATUS: Record<ErrorCode, 400 | 401 | 404 | 409 | 500> = {
+const STATUS: Record<ErrorCode, 400 | 401 | 404 | 409 | 410 | 426 | 500 | 502> = {
   unauthorized: 401,
   bad_request: 400,
   not_found: 404,
@@ -12,6 +12,9 @@ const STATUS: Record<ErrorCode, 400 | 401 | 404 | 409 | 500> = {
   stale_rev: 409,
   conflict: 409,
   upload_missing: 409,
+  expired: 410,
+  outdated: 426,
+  upstream: 502,
   internal: 500,
 };
 

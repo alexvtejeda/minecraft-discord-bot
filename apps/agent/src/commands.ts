@@ -30,6 +30,7 @@ import { javaFor } from "./java/runtime";
 import { cmdCheckPacks } from "./packs/command";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
+import { VERSION } from "./version";
 
 export interface Deps {
   fetch: Fetch;
@@ -176,6 +177,9 @@ async function cmdRun(cmd: Extract<Command, { kind: "run" }>, deps: Deps): Promi
 export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
   switch (cmd.kind) {
     case "help":
+      return;
+    case "version":
+      deps.log(`mc-host ${VERSION}`);
       return;
     case "resolve":
       return cmdResolve(cmd, deps);
