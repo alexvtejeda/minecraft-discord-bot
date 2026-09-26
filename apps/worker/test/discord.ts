@@ -3,6 +3,8 @@ import { env } from "cloudflare:workers";
 import type { Env } from "../src/env";
 import { app } from "../src/index";
 import type { RequestMeta } from "../src/discord/registry";
+import { vi } from "vitest";
+import { envWith } from "./helpers";
 
 const hex = (b: Uint8Array) => [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
 
@@ -100,3 +102,25 @@ export const requestMeta = (over: Partial<RequestMeta> = {}): RequestMeta => ({
   now: 1_000_000,
   ...over,
 });
+
+export const ANNOUNCE_CHANNEL = "400000000000000001";
+export const announceEnv = () => envWith({ ANNOUNCE_CHANNEL_ID: ANNOUNCE_CHANNEL });
+
+export interface DiscordCall {
+  url: string;
+  method: string;
+  auth: string | null;
+  body: any;
+}
+
+/** Replace fetch for the rest of the test and record each call. Pair with afterEach(vi.restoreAllMocks). */
+export function captureDiscord(o: { fail?: boolean } = {}): DiscordCall[] {
+  const calls: DiscordCall[] = [];
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+    const req = new Request(input as Request | string, init);
+    calls.push({ url: req.url, method: req.method, auth: req.headers.get("Authorization"), body: await req.json().catch(() => null) });
+    if (o.fail) throw new Error("Discord is down");
+    return Response.json({ id: "1" });
+  });
+  return calls;
+}

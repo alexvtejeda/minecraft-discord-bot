@@ -10,7 +10,7 @@ export type OptionValue = string | number | boolean;
 /** What the router knows about the HTTP request, before looking at who sent it. */
 export interface RequestMeta {
   env: Env;
-  exec: ExecutionContext;
+  exec: Pick<ExecutionContext, "waitUntil">;
   requestUrl: string;
   now: number;
 }

@@ -11,6 +11,7 @@ import {
   type UploadTarget,
 } from "@mc/protocol";
 import { Hono } from "hono";
+import { announceStarted, announceStopped } from "../announce";
 import { agentAuth } from "../auth";
 import type { AppEnv } from "../env";
 import { readBody } from "../errors";
@@ -44,6 +45,7 @@ agent.post("/lease/claim", async (c) => {
   const { hostAddress } = await readBody(c, ClaimRequestSchema);
   const world = await requireActiveWorld(c.env.DB);
   const body: ClaimResponse = await claimLease(c.env.DB, { userId: c.var.userId, hostAddress, worldId: world.id, now: Date.now() });
+  announceStarted(c.env, c.executionCtx, { userId: c.var.userId, worldName: world.name, minecraft: world.mc_version, hostAddress });
   return c.json(body);
 });
 
@@ -55,7 +57,10 @@ agent.post("/lease/heartbeat", async (c) => {
 
 agent.post("/lease/release", async (c) => {
   const { sessionId } = await readBody(c, SessionRequestSchema);
+  const lease = await requireSession(c.env.DB, sessionId);
   await releaseLease(c.env.DB, sessionId);
+  const latest = await latestSnapshot(c.env.DB, lease.world_id);
+  announceStopped(c.env, c.executionCtx, { userId: c.var.userId, rev: latest?.rev ?? null });
   const body: Ok = { ok: true };
   return c.json(body);
 });

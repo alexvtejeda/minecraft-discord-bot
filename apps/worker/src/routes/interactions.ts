@@ -17,5 +17,5 @@ interactions.post("/", async (c) => {
   );
   if (!ok) return c.text("Bad request signature.", 401);
   const interaction = JSON.parse(body) as APIInteraction;
-  return c.json(await handleInteraction(interaction, { env: c.env, exec: c.executionCtx as ExecutionContext, requestUrl: c.req.url, now: Date.now() }, REGISTRY));
+  return c.json(await handleInteraction(interaction, { env: c.env, exec: c.executionCtx, requestUrl: c.req.url, now: Date.now() }, REGISTRY));
 });

@@ -1,3 +1,4 @@
+import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { profileHash, sha256Hex, type Lockfile } from "@mc/profile";
 import { env } from "cloudflare:workers";
 import { makeProfile } from "../../../packages/profile/test/fakes";
@@ -70,8 +71,10 @@ export async function call(
   if (o.admin) headers.Authorization = `Bearer ${ADMIN_SECRET}`;
   if (o.token) headers.Authorization = `Bearer ${o.token}`;
   if (o.body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await app.request(path, { method, headers, body: o.body === undefined ? undefined : JSON.stringify(o.body) }, o.env ?? env);
+  const ctx = createExecutionContext();
+  const res = await app.request(path, { method, headers, body: o.body === undefined ? undefined : JSON.stringify(o.body) }, o.env ?? env, ctx);
   const text = await res.text();
+  await waitOnExecutionContext(ctx);
   let body: unknown = text;
   try {
     body = JSON.parse(text);
