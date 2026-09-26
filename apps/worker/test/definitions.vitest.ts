@@ -35,6 +35,11 @@ describe("toDiscordCommands", () => {
     expect(byName.status!.default_member_permissions).toBeUndefined();
   });
 
+  it("/setup is play, host and help, open to everyone", () => {
+    expect(byName.setup!.options!.map((o) => o.name)).toEqual(["play", "host", "help"]);
+    expect(byName.setup!.default_member_permissions).toBeUndefined();
+  });
+
   it("puts subcommands under their group", () => {
     expect(byName.world!.options!.map((o) => o.name)).toEqual(["download", "new", "rollback", "archive", "repin"]);
     expect(byName.world!.options!.every((o) => o.type === 1)).toBe(true);

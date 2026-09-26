@@ -4,7 +4,7 @@ import { hostRelease, releaseAction } from "./host-release";
 import { join } from "./join";
 import { modList } from "./mod-list";
 import { modpack } from "./modpack";
-import { setup } from "./setup";
+import { setupHelp, setupHost, setupPlay } from "./setup";
 import { status } from "./status";
 import { revokeAction, tailnetRevoke } from "./tailnet-revoke";
 import { archiveAction, worldArchive } from "./world-archive";
@@ -18,8 +18,9 @@ export const REGISTRY: Registry = {
     world: "Download, create, roll back and archive worlds",
     mod: "Mods in the active world",
     host: "The hosting session",
+    setup: "Put your Windows PC on the Minecraft network",
     tailnet: "The Minecraft network",
   },
-  commands: [help, setup, status, join, modpack, modList, worldDownload, worldNew, worldRollback, worldArchive, worldRepin, hostRelease, tailnetRevoke],
+  commands: [help, setupPlay, setupHost, setupHelp, status, join, modpack, modList, worldDownload, worldNew, worldRollback, worldArchive, worldRepin, hostRelease, tailnetRevoke],
   actions: [newAction, rollbackAction, archiveAction, repinAction, releaseAction, revokeAction],
 };

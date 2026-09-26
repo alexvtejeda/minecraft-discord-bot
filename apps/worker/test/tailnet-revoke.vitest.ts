@@ -14,7 +14,7 @@ async function enrolled(nodeIds: string[]): Promise<string> {
   fakeTailscale();
   let token = "";
   for (const nodeId of nodeIds) {
-    const r = await postInteraction(slash("setup", { host: true }, { username: "alex" }));
+    const r = await postInteraction(slash("setup host", {}, { username: "alex" }));
     const code = /\/s\/([A-Z0-9]{4}-[A-Z0-9]{4})/.exec(r.body.data.content)![1]!;
     token = (await call("POST", "/enroll", { body: { code, join: true } })).body.token;
     await call("POST", "/enroll/device", { body: { code, nodeId } });
@@ -43,7 +43,7 @@ describe("/tailnet revoke", () => {
     expect(await count("devices")).toBe(0);
     expect(await count("enrollments")).toBe(0);
     expect((await call("GET", "/agent/manifest", { token })).status).toBe(401);
-    const again = await postInteraction(slash("setup", {}, { username: "alex" }));
+    const again = await postInteraction(slash("setup play", {}, { username: "alex" }));
     expect(again.body.data.content).toContain("You've been removed from the Minecraft network");
   });
 
@@ -72,7 +72,7 @@ describe("/tailnet revoke", () => {
     expect(preview.body.data.content).toContain("no devices on record");
     fakeTailscale();
     await postInteraction(button(confirmId(preview), M));
-    const setup = await postInteraction(slash("setup", {}, { username: "alex" }));
+    const setup = await postInteraction(slash("setup play", {}, { username: "alex" }));
     expect(setup.body.data.content).toContain("You've been removed from the Minecraft network");
   });
 
@@ -95,7 +95,7 @@ describe("/tailnet revoke", () => {
     fakeTailscale();
     await postInteraction(button(confirmId(preview), M));
     await call("POST", "/admin/tokens", { admin: true, body: { discordId: ALEX, name: "Alex" } });
-    const setup = await postInteraction(slash("setup", {}, { username: "alex" }));
+    const setup = await postInteraction(slash("setup play", {}, { username: "alex" }));
     expect(setup.body.data.content).toContain("irm ");
   });
 });

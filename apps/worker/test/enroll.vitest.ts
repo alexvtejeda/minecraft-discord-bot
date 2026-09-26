@@ -9,8 +9,8 @@ afterEach(() => vi.restoreAllMocks());
 
 const EXPIRED = { error: "expired", message: "This setup link expired. Run /setup in Discord again." };
 
-async function setupCode(o: Record<string, boolean> = {}, username = "Alex.V_T"): Promise<string> {
-  const r = await postInteraction(slash("setup", o, { username }));
+async function setupCode(mode: "play" | "host" = "play", username = "Alex.V_T"): Promise<string> {
+  const r = await postInteraction(slash(`setup ${mode}`, {}, { username }));
   return /\/s\/([A-Z0-9]{4}-[A-Z0-9]{4})/.exec(r.body.data.content)![1]!;
 }
 const user = () => env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(ALEX).first<any>();
@@ -32,7 +32,7 @@ describe("tailnetHostname", () => {
 
 describe("GET /s/:code", () => {
   it("serves the installer with this Worker's URL, the code and the mode filled in", async () => {
-    const code = await setupCode({ host: true });
+    const code = await setupCode("host");
     const r = await call("GET", `/s/${code}`);
     expect(r.status).toBe(200);
     expect(r.body).toContain("$WorkerUrl = 'http://localhost'");
@@ -67,7 +67,7 @@ describe("POST /enroll", () => {
 
   it("host: also returns a hosting token that works", async () => {
     fakeTailscale();
-    const code = await setupCode({ host: true });
+    const code = await setupCode("host");
     const r = await call("POST", "/enroll", { body: { code, join: true } });
     expect(r.body.token).toEqual(expect.any(String));
     const manifest = await call("GET", "/agent/manifest", { token: r.body.token });
@@ -76,7 +76,7 @@ describe("POST /enroll", () => {
 
   it("join:false mints no key (the PC is already on the network)", async () => {
     const calls = fakeTailscale();
-    const code = await setupCode({ host: true });
+    const code = await setupCode("host");
     const r = await call("POST", "/enroll", { body: { code, join: false } });
     expect(r.body.authKey).toBeUndefined();
     expect(r.body.token).toEqual(expect.any(String));

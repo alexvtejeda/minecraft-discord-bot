@@ -7,8 +7,8 @@ import { ALEX, postInteraction, slash } from "./discord";
 const CODE = /\/s\/([2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4})/;
 const row = () => env.DB.prepare("SELECT * FROM enrollments WHERE discord_id = ?").bind(ALEX).first<any>();
 
-async function runSetup(options: Record<string, boolean> = {}) {
-  const r = await postInteraction(slash("setup", options, { username: "alex.v" }));
+async function runSetup(sub: "play" | "host" | "help" = "play") {
+  const r = await postInteraction(slash(`setup ${sub}`, {}, { username: "alex.v" }));
   const content: string = r.body.data.content;
   return { content, code: CODE.exec(content)?.[1] ?? null, flags: r.body.data.flags };
 }
@@ -43,10 +43,17 @@ describe("/setup", () => {
     expect(r.expires_at - r.created_at).toBe(CODE_MS);
   });
 
-  it("host:True makes a hosting code", async () => {
-    const { content } = await runSetup({ host: true });
+  it("/setup host makes a hosting code", async () => {
+    const { content } = await runSetup("host");
     expect(content).toContain("play and host");
+    expect(content).toContain("`/setup help`");
     expect((await row()).mode).toBe("host");
+  });
+
+  it("/setup play points at /setup host and /setup help", async () => {
+    const { content } = await runSetup("play");
+    expect(content).toContain("`/setup host`");
+    expect(content).toContain("`/setup help`");
   });
 
   it("a second /setup replaces the first code", async () => {
@@ -54,6 +61,16 @@ describe("/setup", () => {
     const second = (await runSetup()).code!;
     expect(await pendingEnrollment(env.DB, first, Date.now())).toBeNull();
     expect(await pendingEnrollment(env.DB, second, Date.now())).not.toBeNull();
+  });
+
+  it("/setup help explains hosting and makes no code", async () => {
+    const { content, code, flags } = await runSetup("help");
+    expect(flags).toBe(64);
+    expect(code).toBeNull();
+    for (const step of ["**Host Minecraft**", "`mc-host start`", "Ctrl+C", "Hosting has stopped", "`/join`", "`/modpack`", "`/setup host`", "Web Shield"]) {
+      expect(content).toContain(step);
+    }
+    expect(await row()).toBeNull();
   });
 
   it("refuses someone who was removed", async () => {

@@ -13,7 +13,7 @@ export const help: Command = {
       "**Minecraft bot commands**",
       ...lines,
       "",
-      "New here? Run `/setup`. To host, run `/setup` with `host` set to True once, then `mc-host start` (or **Host Minecraft** in the Start Menu).",
+      "New here? Run `/setup play`, or `/setup host` to host too. `/setup help` shows how to host and stop.",
     ].join("\n"));
   },
 };
