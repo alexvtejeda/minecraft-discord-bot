@@ -1,0 +1,25 @@
+// Tailnet policy for the Minecraft tailnet.
+// Paste into https://login.tailscale.com/admin/acls/file (replaces the default allow-all policy).
+{
+	"tagOwners": {
+		// Only the tailnet admin (and the bot's OAuth client, which is created with this tag) can apply it.
+		"tag:mc-player": ["autogroup:admin"],
+	},
+
+	"grants": [
+		// Any player PC may be the host, so players can reach each other on the game port only.
+		{
+			"src": ["tag:mc-player", "autogroup:member"],
+			"dst": ["tag:mc-player"],
+			"ip":  ["tcp:25565"],
+		},
+	],
+
+	"tests": [
+		{
+			"src":    "tag:mc-player",
+			"accept": ["tag:mc-player:25565"],
+			"deny":   ["tag:mc-player:22", "tag:mc-player:3389", "tag:mc-player:445"],
+		},
+	],
+}

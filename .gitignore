@@ -1,0 +1,19 @@
+# Dependencies / builds
+node_modules/
+dist/
+.wrangler/
+
+# Secrets — never commit
+.env
+.env.*
+.dev.vars
+*.secret
+
+# Minecraft binaries and world data live in R2, not in this public repo
+*.jar
+*.zip
+world/
+worlds/
+recovered/
+server/
+VanillaTweaks_*/
