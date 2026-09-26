@@ -18,8 +18,8 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 - [x] Profile schema and lockfile (`packages/profile`), resolved from Modrinth with a `waiting` list
 - [x] `vanilla-plus` and `adventure` profiles for 26.3 (`profiles/`)
 - [x] Server builder and `.mrpack` builder for Prism Launcher
-- [ ] Voice chat port (UDP 24454) in the tailnet policy
-- [ ] Run `adventure` locally on Fedora and join it through Prism
+- [x] Voice chat port (UDP 24454) in the tailnet policy
+- [x] Run `adventure` locally on Fedora and join it through Prism
 
 ## Phase 2: Hosting
 - [ ] Worker skeleton with D1 and R2 (wrangler)
@@ -27,6 +27,7 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 - [ ] `mc-host` agent: start/stop, autosave, heartbeat, crash recovery
 - [ ] Portable JDK chosen per Minecraft version
 - [ ] `install.ps1` (Windows) and `install.sh` (Linux, Docker + Tailscale sidecar)
+- [ ] `build-server` checks each datapack's `pack_format` against the Minecraft version and names the ones that would stop the server from starting
 
 ## Phase 3: Discord commands
 - [ ] Interactions endpoint and command registration
