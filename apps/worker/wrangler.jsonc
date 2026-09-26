@@ -24,6 +24,11 @@
 	],
 	"vars": {
 		"R2_ACCOUNT_ID": "663d004e8e50dcaa58dddbd1403d8f3f",
-		"R2_BUCKET_NAME": "mc-bot"
+		"R2_BUCKET_NAME": "mc-bot",
+		"DISCORD_APP_ID": "",
+		"DISCORD_PUBLIC_KEY": "",
+		"DISCORD_GUILD_ID": "",
+		"ANNOUNCE_CHANNEL_ID": "",
+		"MAINTAINER_ROLE_ID": ""
 	}
 }

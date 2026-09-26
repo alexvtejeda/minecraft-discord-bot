@@ -4,6 +4,7 @@ import { ApiError, handleError } from "./errors";
 import { dev } from "./routes/dev";
 import { agent } from "./routes/agent";
 import { admin } from "./routes/admin";
+import { interactions } from "./routes/interactions";
 
 export const app = new Hono<AppEnv>();
 app.onError(handleError);
@@ -12,6 +13,7 @@ app.get("/health", (c) => c.text("ok"));
 app.route("/dev", dev);
 app.route("/admin", admin);
 app.route("/agent", agent);
+app.route("/interactions", interactions);
 // routers: mounted by later tasks
 
 export default app;

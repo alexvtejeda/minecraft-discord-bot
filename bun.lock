@@ -29,12 +29,14 @@
         "@mc/profile": "workspace:*",
         "@mc/protocol": "workspace:*",
         "aws4fetch": "^1.0.20",
+        "discord-api-types": "^0.38.55",
         "hono": "^4.13.0",
         "zod": "^4.1.0",
       },
       "devDependencies": {
         "@cloudflare/vitest-plugin": "^1.2.8",
         "@cloudflare/workers-types": "^5.20260926.1",
+        "fflate": "^0.8.3",
         "vitest": "^4.1.0",
         "wrangler": "^4.141.0",
       },
@@ -285,6 +287,8 @@
     "cookie": ["cookie@1.1.1", "", {}, "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ=="],
 
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
+
+    "discord-api-types": ["discord-api-types@0.38.55", "", {}, "sha512-ytuaRTzdnHUCXJ6KjL9MrItQX0xKncBKEeYI1Bst4+ud47eejH3cG6gaesYakjpPcUhh68XYS2YwGq3mmujFsA=="],
 
     "error-stack-parser-es": ["error-stack-parser-es@1.0.5", "", {}, "sha512-5qucVt2XcuGMcEGgWI7i+yZpmpByQ8J1lHhcL7PwqCwu9FPP3VUXzT4ltHe5i2z9dePwEHcDVOAfSnHsOlCXRA=="],
 
