@@ -101,3 +101,17 @@ test("entries outside the snapshot paths are refused", async () => {
     await expect(extractSnapshot(zip, join(root, "dest"), "world", await sha256File(zip))).rejects.toThrow("unsafe");
   }
 });
+
+test("zero-padded files round-trip (fflate's streaming deflate corrupts them)", async () => {
+  // Region files are zero-padded 4 KiB sectors. fflate 0.8.3's ZipDeflate wrote an invalid stream for
+  // 32 KiB of zeros with one set byte, and extraction failed with "invalid distance".
+  const src = join(root, "src");
+  const region = new Uint8Array(32768);
+  region[100] = 1;
+  put(src, "world/entities/r.-1.0.mca", region);
+  const zip = join(root, "snap.zip");
+  const { sha256 } = await zipSnapshot(src, "world", zip);
+  const dest = join(root, "dest");
+  await extractSnapshot(zip, dest, "world", sha256);
+  expect(new Uint8Array(readFileSync(join(dest, "world/entities/r.-1.0.mca")))).toEqual(region);
+});

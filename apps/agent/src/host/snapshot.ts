@@ -1,7 +1,8 @@
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
+import { deflateRawSync } from "node:zlib";
 import { UserError } from "@mc/profile";
-import { Unzip, UnzipInflate, Zip, ZipDeflate } from "fflate";
+import { Unzip, UnzipInflate, Zip, ZipPassThrough } from "fflate";
 
 /** What a snapshot holds. Everything else is rebuilt from the world's pinned lockfile. */
 export function snapshotPaths(levelName: string): string[] {
@@ -12,6 +13,28 @@ export function snapshotPaths(levelName: string): string[] {
 const SKIP = new Set(["session.lock"]);
 
 export class ChecksumError extends UserError {}
+
+/**
+ * A deflated zip entry, compressed by zlib. fflate 0.8.3's own streaming deflate (ZipDeflate)
+ * writes invalid streams for some inputs, such as a zero-padded region file, so only fflate's
+ * zip container is used. Holds one file at a time in memory, never the whole zip.
+ */
+class ZlibDeflateEntry extends ZipPassThrough {
+  private chunks: Uint8Array[] = [];
+
+  constructor(filename: string) {
+    super(filename);
+    this.compression = 8;
+  }
+
+  protected override process(chunk: Uint8Array, final: boolean): void {
+    this.chunks.push(chunk);
+    if (!final) return;
+    const out = deflateRawSync(Buffer.concat(this.chunks), { level: 6 });
+    this.chunks = [];
+    this.ondata!(null, new Uint8Array(out.buffer, out.byteOffset, out.byteLength), true);
+  }
+}
 
 async function* walk(root: string, rel: string): AsyncGenerator<string> {
   const st = await stat(join(root, rel)).catch(() => null);
@@ -49,7 +72,7 @@ export async function zipSnapshot(serverDir: string, levelName: string, outFile:
   for (const top of snapshotPaths(levelName)) {
     for await (const rel of walk(serverDir, top)) {
       if (SKIP.has(basename(rel))) continue;
-      const entry = new ZipDeflate(rel, { level: 6 });
+      const entry = new ZlibDeflateEntry(rel);
       zip.add(entry);
       for await (const chunk of Bun.file(join(serverDir, rel)).stream()) entry.push(chunk);
       entry.push(new Uint8Array(0), true);
