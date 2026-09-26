@@ -4,6 +4,7 @@ import { env } from "cloudflare:workers";
 import { makeProfile } from "../../../packages/profile/test/fakes";
 import type { Env } from "../src/env";
 import { app } from "../src/index";
+import { claimLease, LEASE_MS } from "../src/lease";
 
 export const ADMIN_SECRET = "test-admin";
 
@@ -115,4 +116,12 @@ export async function call(
     body = JSON.parse(text);
   } catch {}
   return { status: res.status, body };
+}
+
+/** Claim the lease as if hosting started `sinceMs` ago, with a fresh heartbeat. */
+export async function hostSince(userId: string, worldId: string, sinceMs: number, hostAddress = "100.64.0.3") {
+  const now = Date.now();
+  const lease = await claimLease(env.DB, { userId, hostAddress, worldId, now: now - sinceMs });
+  await env.DB.prepare("UPDATE lease SET expires_at = ? WHERE id = 1").bind(now + LEASE_MS).run();
+  return lease;
 }
