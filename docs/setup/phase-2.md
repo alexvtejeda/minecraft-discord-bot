@@ -63,6 +63,28 @@ mc-host admin world create adventure --import <the Phase 1 server folder>
 mc-host admin status
 ```
 
+## 6. Phase 2b: Java and datapacks
+
+mc-host downloads the Java each world needs (a Temurin JRE from Adoptium, about 58 MB) the
+first time it's needed. It lands in `/data/cache/mc-host/java/` in Docker and in
+`~/.cache/mc-host/java/` natively, so no host needs Java installed. To use your own Java
+instead, set `MC_JAVA=/path/to/bin/java`.
+
+After pulling this change, run `scripts/install.sh` again with the same arguments, so the
+image is rebuilt without its built-in Java.
+
+### Checking datapacks
+
+```bash
+mc-host profile check-packs adventure --packs datapacks --all
+```
+
+This builds a test server for the profile in `~/.cache/mc-host/check-packs/adventure/`,
+boots it once without datapacks (the mods' own errors are ignored from then on), then with
+the packs, and names every pack that causes an error. It takes about 20–60 seconds per
+boot. Without `--all`, it checks only the profile's `datapacks`. Add `--keep` to look at the
+test world and the boot logs afterwards.
+
 ## Manual checklist
 
 - [ ] `mc-host status` shows the imported world at rev 1, with nobody hosting.
@@ -75,3 +97,7 @@ mc-host admin status
 - [ ] `mc-host start`, then from another terminal `docker kill mc-host-agent` partway through the session. The next `mc-host start` asks "Your last session didn't finish uploading … Upload it now? [Y/n]". Enter uploads it.
 - [ ] `mc-host stop` from a second terminal stops a running session the same way Ctrl+C does.
 - [ ] `mc-host admin world create vanilla-plus --replace`, then `mc-host start`. Chunky starts pre-generating (`chunky progress` in the console shows it).
+- [ ] **2b:** after re-running `install.sh`, `docker run --rm --entrypoint sh mc-host:local -c 'command -v java || echo no-java'` prints `no-java`.
+- [ ] **2b:** `mc-host start` from an empty Java cache prints "Downloading Java 25 (… MB)…" before "Claimed", and hosting works as before. A second start doesn't download again.
+- [ ] **2b:** `mc-host profile check-packs adventure --packs datapacks --all` fails exactly `player head drops` and `double shulker shells`, and passes the other eight.
+- [ ] **2b:** `mc-host profile check-packs adventure --packs datapacks --all --keep` leaves `check-logs/` with one log per boot.
