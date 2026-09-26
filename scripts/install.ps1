@@ -88,12 +88,18 @@ if ('$needFirewall' -eq 'True') {
 }
 exit 0
 "@
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($admin))
+    # A plain .ps1 run with -File in a visible window: antivirus (Avast's Web Shield) flags scripts
+    # that start a hidden elevated PowerShell with -EncodedCommand. The BOM makes PowerShell 5.1 read
+    # it as UTF-8, in case the TEMP path has accented letters.
+    $adminPs1 = Join-Path $env:TEMP 'mc-setup-admin.ps1'
+    [IO.File]::WriteAllText($adminPs1, $admin, (New-Object Text.UTF8Encoding $true))
     Say 'Windows will ask for permission next. Click Yes.'
     try {
-      $p = Start-Process powershell.exe -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded
+      $p = Start-Process powershell.exe -Verb RunAs -Wait -PassThru -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$adminPs1`""
     } catch {
       throw 'Setup needs you to click Yes on the permission prompt. Run the line again to retry.'
+    } finally {
+      Remove-Item $adminPs1 -ErrorAction SilentlyContinue
     }
     if ($p.ExitCode -eq 10) { throw "Tailscale didn't install. Restart your PC and run the line again. If it still fails, tell a maintainer." }
     if ($p.ExitCode -ne 0) { throw "The admin step failed (code $($p.ExitCode)). Tell a maintainer." }

@@ -43,7 +43,14 @@ after pulling (0.1.0 agents are now refused).
 `/tailnet revoke` blocks a person. To undo it, run `mc-host admin token mint <discord-id> <name>`,
 then they run `/setup` again.
 
-## 5. If Windows Defender blocks mc-host.exe
+## 5. If Avast cuts off the setup line
+
+Avast's Web Shield can stop `irm … | iex` with "The connection was closed unexpectedly", or
+flag the Tailscale download. Pause it (Protection → Core Shields → Web Shield → 10 minutes),
+paste the line again (it isn't used up by a failed download), then turn the shield back on.
+`/setup help` tells friends the same.
+
+## 6. If Windows Defender blocks mc-host.exe
 
 Unsigned programs built with Bun are sometimes flagged. If it happens: Windows Security →
 Virus & threat protection → Protection history → Allow, or add
@@ -51,11 +58,11 @@ Virus & threat protection → Protection history → Allow, or add
 
 ## Checklist (clean Windows 10/11 VM)
 
-- [ ] `/setup` → paste the line → one permission prompt → "You're on the Minecraft network"
+- [ ] `/setup play` → paste the line → one permission prompt → "You're on the Minecraft network"
 - [ ] The device shows up in the Tailscale admin tagged `tag:mc-player`, named `mc-<username>`
 - [ ] Host from Fedora; the VM joins through Prism (import the `/modpack` link)
 - [ ] Running the same line again says the link expired
-- [ ] `/setup host:True` on the same VM: no Tailscale install, no network key minted; `mc-host.exe`, the **Host Minecraft** shortcut and the two `Minecraft (mc-host)` firewall rules appear; `mc-host status` prints
+- [ ] `/setup host` on the same VM: no Tailscale install, no network key minted; `mc-host.exe`, the **Host Minecraft** shortcut and the two `Minecraft (mc-host)` firewall rules appear; `mc-host status` prints
 - [ ] `mc-host --version` in a new terminal prints `mc-host 0.2.0` (PATH works)
 - [ ] Host from the shortcut: the JRE downloads and extracts, the 🟢 announcement shows a `100.x` address, and Fedora joins
 - [ ] If Windows asks about Java's network access, note what it asked (it shouldn't, thanks to the port rules)

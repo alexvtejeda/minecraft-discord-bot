@@ -67,8 +67,13 @@ an existing token.
 
 ### Routes and commands
 
-**`/setup [host]`** (everyone, ephemeral)
-- A user with `revoked_at` set gets "You've been removed from the Minecraft network. Ask a
+**`/setup play`, `/setup host`, `/setup help`** (everyone, ephemeral)
+- Subcommands rather than a `host` option, because Discord doesn't let a command with
+  subcommands also run on its own, and `/setup help` needs to be one.
+- `/setup help` is a reminder: host from **Host Minecraft** (or `mc-host start`), stop with
+  Ctrl+C and wait for "Hosting has stopped", join with `/modpack` and `/join`, update with
+  `/setup host`, and pause Avast's Web Shield if the setup line is cut off.
+- For `play` and `host`, a user with `revoked_at` set gets "You've been removed from the Minecraft network. Ask a
   maintainer to let you back in." A maintainer re-enables them by running
   `mc-host admin token mint`, which already clears `revoked_at`.
 - Otherwise it upserts the user's `enrollments` row and replies with:
@@ -137,7 +142,9 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
 1. **Preflight.** It needs Windows 10 or 11 on x64. If Tailscale is installed and logged in
    to a different tailnet, it stops, explains, and changes nothing. If it's already on the
    Minecraft tailnet, it skips the Tailscale install (step 2) and the join (step 4).
-2. **Admin step, with one UAC prompt,** only when there's something to do. An elevated PowerShell:
+2. **Admin step, with one UAC prompt,** only when there's something to do. An elevated PowerShell,
+   run in a visible window from a temporary `.ps1` with `-File` (antivirus flags a hidden elevated
+   PowerShell started with `-EncodedCommand`):
    - installs Tailscale from the official MSI, downloaded before the prompt. The MSI works
      on every Windows 10/11 and needs no winget;
    - host mode only: adds an inbound firewall rule for TCP 25565 and UDP 24454 from
@@ -145,7 +152,7 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
      without the rule players can't reach the server.
 3. **Redeem** with `POST /enroll { code, join }`. `join` is false when the PC is already on
    the tailnet, so no auth key is minted. This happens after the install, so the 10-minute
-   key doesn't expire while winget runs.
+   key doesn't expire while the install runs.
 4. **Join** with `tailscale up --unattended --auth-key=… --hostname=<hostname>`. Without
    `--unattended`, Windows Tailscale runs only while a program is connected to it, and the tray
    app isn't running after a silent install, so it stops as soon as `up` exits. Then it waits up to 60
