@@ -22,6 +22,18 @@ tailnet onboarding stay in Phase 4.
 | Announcements: started, stopped, lease expired, mod added | Started and stopped only | Lease expiry would need a cron. `/status` shows nobody hosting once a lease has expired. |
 | `/watch channel` | Phase 6 | Announcements use a fixed channel from `wrangler.jsonc`. |
 
+## Refinements from planning
+
+- **`/world` stays visible to everyone.** `/world download` is for players, and Discord hides
+  commands per top-level name, so only `/host` is registered hidden. The `/world` maintainer
+  subcommands are refused server-side.
+- **No deferred replies.** `/modpack` returns a URL and the Worker builds the pack on its own
+  route, so every command answers within Discord's 3 seconds. `respond.ts` has no deferral
+  helper and `rest.ts` only posts channel messages.
+- **Tests spy on `fetch` with `vi.spyOn`.** The installed `@cloudflare/vitest-plugin` (1.2.8)
+  has no `fetchMock`.
+- The modpack route lives in `routes/modpack.ts`, and the builder in `src/mrpack.ts`.
+
 ## Decisions
 
 | Topic | Decision | Why |
