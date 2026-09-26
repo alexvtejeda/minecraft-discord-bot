@@ -12,17 +12,9 @@ import { loadHostConfig, type HostConfig } from "./config";
 import { javaCommand, spawnProcess } from "./console";
 import type { SessionDeps } from "./deps";
 import { hostSession } from "./session";
+import { onStopSignal } from "./signals";
 import { TerminalInput } from "./terminal";
 import { downloadTo, uploadFile } from "./transfer";
-
-function onStopSignal(handler: () => void): () => void {
-  process.on("SIGINT", handler);
-  process.on("SIGTERM", handler);
-  return () => {
-    process.off("SIGINT", handler);
-    process.off("SIGTERM", handler);
-  };
-}
 
 function sessionDeps(deps: Deps, cfg: HostConfig, input: TerminalInput): SessionDeps {
   const ask = (q: string) => input.ask(q, (text) => process.stdout.write(text));
