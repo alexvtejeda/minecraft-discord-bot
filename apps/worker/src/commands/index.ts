@@ -5,6 +5,7 @@ import { modList } from "./mod-list";
 import { modpack } from "./modpack";
 import { status } from "./status";
 import { worldDownload } from "./world-download";
+import { newAction, worldNew } from "./world-new";
 
 export const REGISTRY: Registry = {
   groups: {
@@ -12,6 +13,6 @@ export const REGISTRY: Registry = {
     mod: "Mods in the active world",
     host: "The hosting session",
   },
-  commands: [help, status, join, modpack, modList, worldDownload],
-  actions: [],
+  commands: [help, status, join, modpack, modList, worldDownload, worldNew],
+  actions: [newAction],
 };
