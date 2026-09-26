@@ -40,7 +40,9 @@ export function clampToProject(p: Placement, project: MrProject): Placement {
 }
 
 export function sideOf(p: Placement): { side: Side; clientOptional: boolean } {
-  if (!p.server) return { side: "client-optional", clientOptional: false };
+  // clientOptional means "players may untick it". A client-only library that a both mod
+  // requires stays client-optional (not on the server) but is required on the client.
+  if (!p.server) return { side: "client-optional", clientOptional: p.client !== "required" };
   if (p.client === "no") return { side: "server", clientOptional: false };
   return { side: "both", clientOptional: p.client === "optional" };
 }

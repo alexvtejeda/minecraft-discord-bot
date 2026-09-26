@@ -95,12 +95,19 @@ test("a missing lockfile says to resolve first", async () => {
 
 test("run refuses when the EULA is declined", async () => {
   const srv = join(dir, "srv");
-  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 8, memory: { min: "1G", max: "1G" } }));
+  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 8, memory: { min: "1G", max: "1G" }, complete: true }));
   await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/You need to agree to the EULA/);
 });
 
 test("run refuses a Java that is too old", async () => {
   const srv = join(dir, "srv");
-  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 99, memory: { min: "1G", max: "1G" } }));
+  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 99, memory: { min: "1G", max: "1G" }, complete: true }));
   await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/Minecraft 26\.3 needs Java 99, but this PC has Java \d+/);
+});
+
+// Final review I1
+test("run refuses a folder whose last build did not finish", async () => {
+  const srv = join(dir, "srv");
+  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 8, memory: { min: "1G", max: "1G" }, complete: false }));
+  await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/last build of "test" in .* didn't finish/);
 });

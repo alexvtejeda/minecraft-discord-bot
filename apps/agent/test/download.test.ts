@@ -2,7 +2,7 @@ import { beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { sha512Hex, type Fetch } from "@mc/profile";
+import { sha512Hex, UserError, type Fetch } from "@mc/profile";
 import { fetchVerified } from "../src/download";
 
 const good = new TextEncoder().encode("jar bytes");
@@ -73,4 +73,22 @@ test("an HTTP error is a plain-English UserError", async () => {
   await expect(fetchVerified(URL_, goodHash, { fetch, cacheDir: dir, userAgent: "ua" })).rejects.toThrow(
     /Couldn't download Waystones 1\.0\.jar \(HTTP 503\)/,
   );
+});
+
+// Final review I4
+test("retries a network error once, then gives a plain-English error", async () => {
+  let calls = 0;
+  const flaky: Fetch = async () => {
+    calls++;
+    if (calls === 1) throw new Error("ECONNRESET");
+    return new Response(good);
+  };
+  await fetchVerified(URL_, goodHash, { fetch: flaky, cacheDir: dir, userAgent: "ua" });
+  expect(calls).toBe(2);
+  const down: Fetch = async () => {
+    throw new Error("getaddrinfo ENOTFOUND");
+  };
+  const p = fetchVerified("https://cdn.modrinth.com/data/y/Other.jar", await sha512Hex(bad), { fetch: down, cacheDir: dir, userAgent: "ua" });
+  await expect(p).rejects.toBeInstanceOf(UserError);
+  await expect(p).rejects.toThrow(/Couldn't download Other\.jar \(getaddrinfo ENOTFOUND\)\. Check your internet connection/);
 });

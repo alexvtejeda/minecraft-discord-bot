@@ -18,7 +18,7 @@
       "sha512": "17d257af419b7530aa8617c2e8c0e4bbfabcf888f26655790e0188e7957e0bcd931f85f9a4c69fd27e889dee5082cf7b2b8741a14a6ed4425e9ef4bfe13a8b8c",
       "size": 180194,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -63,7 +63,7 @@
       "sha512": "c5d8947cb022f8baed4bf17e38ca598c56b8049871e7e47fb462bcecc9bc01e7eb75290494199fcb1aa73f5e37f93a296211ba78c9dd2a5bff30d5eed497ebcc",
       "size": 1508273,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -108,7 +108,7 @@
       "sha512": "8e139589fd995bce3d485a34d92a07243964212f7ed2e4fc2f6de5b9a74d0f59b03252e7ce40c64e006cf3e21bed5de27b830d33ef048b286e041f6178ad8428",
       "size": 99586,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -123,7 +123,7 @@
       "sha512": "cd0fdc5a275a851b3d72e3e699c957671f293f5c87951736ad83adcdabaa58f533e9791110a227c7817b312269c32c063121b183a39d8c11a22e55d2c76cdb25",
       "size": 2849091,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -138,7 +138,7 @@
       "sha512": "1359d6576214fffadcb7bd4202bfd1606c827ab6c75143cbc7747269ed7d4131f5db226a914b9a924cac92e596c7994e6fe3303671ff8d5a2dcd41caf613e7ae",
       "size": 1038435,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -168,7 +168,7 @@
       "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606",
       "size": 856779,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -183,7 +183,7 @@
       "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4",
       "size": 254959,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": true,
       "prerelease": false
     },
@@ -228,7 +228,7 @@
       "sha512": "f3f260f204b8ce5e8777c2c73f537956755ec61f3817b0b78b5e5568e8aa40f14891f146475075109747665c7c88a45ca0ca9a8df3c68d79c58ecdaa8d8c4b93",
       "size": 1908068,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -273,7 +273,7 @@
       "sha512": "86de35d7c6ae10441d9a1e7f14656a87dc3cfa17487b122ea5bfa6f322b56bfa1b96662903a36f2ff0e0d579644474510c4463ea21dea8223b8931d6dbf64e61",
       "size": 2229348,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -288,7 +288,7 @@
       "sha512": "7f77d9bbede1669373293134167378729170c36ab0eb3d28383f517d208de5d465fd3ef1ae32dfc043bac5e3d5f951797db1fa874c1d85375be5c52c3c859d61",
       "size": 1480980,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     }

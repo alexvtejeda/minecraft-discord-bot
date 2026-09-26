@@ -33,7 +33,7 @@ const lock: Lockfile = {
     entry("lithium", "server"),
     entry("waystones", "both"),
     entry("voicechat", "both", true),
-    entry("sodium", "client-optional"),
+    entry("sodium", "client-optional", true),
   ],
 };
 
@@ -72,4 +72,15 @@ test("rejects override paths that escape the pack", async () => {
 test("isVanillaCompatible is false only when a client-required file exists", () => {
   expect(isVanillaCompatible(lock)).toBe(false);
   expect(isVanillaCompatible({ ...lock, files: lock.files.filter((f) => f.slug !== "waystones") })).toBe(true);
+});
+
+// Final review I3
+test("a client-only file that is required maps to env.client required and blocks vanilla clients", async () => {
+  const onlyReq = { ...lock, files: [entry("sodium", "client-optional", true), entry("client-lib", "client-optional", false)] };
+  const index = await mrpackIndex(onlyReq, { name: "T" });
+  expect(index.files.map((f) => [f.path, f.env.client, f.env.server])).toEqual([
+    ["mods/sodium.jar", "optional", "unsupported"],
+    ["mods/client-lib.jar", "required", "unsupported"],
+  ]);
+  expect(isVanillaCompatible(onlyReq)).toBe(false);
 });

@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sha512Hex, type Fetch, type LockEntry, type Lockfile } from "@mc/profile";
@@ -69,7 +69,7 @@ test("builds launcher, server-side mods, properties, datapacks and marker", asyn
   expect(existsSync(join(serverDir, "world", "datapacks", "afk display v1.1.17 (MC 26.2).zip"))).toBe(true);
   expect(existsSync(join(serverDir, "eula.txt"))).toBe(false);
   expect(existsSync(join(serverDir, MARKER))).toBe(true);
-  expect(await readMarker(serverDir)).toEqual({ profile: "test", minecraft: "26.3", javaMajor: 25, memory: { min: "2G", max: "4G" } });
+  expect(await readMarker(serverDir)).toEqual({ profile: "test", minecraft: "26.3", javaMajor: 25, memory: { min: "2G", max: "4G" }, complete: true });
 });
 
 // Review focus 4
@@ -111,4 +111,64 @@ test("rejects a lockfile filename that escapes mods/", async () => {
 
 test("readMarker explains a folder that was not built by mc-host", async () => {
   await expect(readMarker(root)).rejects.toThrow(/isn't a server folder built by mc-host/);
+});
+
+// Final review I1
+test("a failed download leaves the existing server folder untouched", async () => {
+  const lock = await makeLock();
+  await buildServer({ profile, lock, dir: serverDir, packsDir, fetch, cacheDir: cache, userAgent: "ua" });
+  const updated = await makeLock();
+  updated.files[1] = { ...updated.files[1]!, filename: "waystones-2.jar", url: "https://cdn.test/waystones-2.jar", sha512: await sha512Hex(bytes("waystones-2")) };
+  const offline: Fetch = async (url) => (url.includes("waystones-2") ? new Response("", { status: 503 }) : fetch(url));
+  await expect(buildServer({ profile, lock: updated, dir: serverDir, packsDir, fetch: offline, cacheDir: cache, userAgent: "ua" })).rejects.toThrow(/Couldn't download/);
+  expect(readdirSync(join(serverDir, "mods")).sort()).toEqual(["lithium.jar", "waystones.jar"]);
+  expect((await readMarker(serverDir)).complete).toBe(true);
+});
+
+// Final review I2
+test("refuses to build a different profile into an existing server folder unless forced", async () => {
+  await buildServer({ profile, lock: await makeLock(), dir: serverDir, packsDir, fetch, cacheDir: cache, userAgent: "ua" });
+  const other = makeProfile({ name: "other", datapacks: [] });
+  await expect(buildServer({ profile: other, lock: await makeLock(), dir: serverDir, fetch, cacheDir: cache, userAgent: "ua" })).rejects.toThrow(
+    /holds the "test" world[\s\S]*--force/,
+  );
+  expect(readdirSync(join(serverDir, "mods")).sort()).toEqual(["lithium.jar", "waystones.jar"]);
+  await buildServer({ profile: other, lock: await makeLock(), dir: serverDir, fetch, cacheDir: cache, userAgent: "ua", force: true });
+  expect((await readMarker(serverDir)).profile).toBe("other");
+});
+
+test("refuses a folder with jars that mc-host did not put there unless forced", async () => {
+  mkdirSync(join(serverDir, "mods"), { recursive: true });
+  writeFileSync(join(serverDir, "mods", "handmade.jar"), "x");
+  await expect(buildServer({ profile, lock: await makeLock(), dir: serverDir, packsDir, fetch, cacheDir: cache, userAgent: "ua" })).rejects.toThrow(
+    /already has jars that mc-host didn't put there/,
+  );
+  expect(existsSync(join(serverDir, "mods", "handmade.jar"))).toBe(true);
+});
+
+// Final review I4
+test("a --packs folder that does not exist is a plain-English error", async () => {
+  await expect(buildServer({ profile, lock: await makeLock(), dir: serverDir, packsDir: join(root, "nope"), fetch, cacheDir: cache, userAgent: "ua" })).rejects.toThrow(
+    /The --packs folder .*nope doesn't exist/,
+  );
+});
+
+test("a mods folder that can't be written says to stop the server", async () => {
+  await buildServer({ profile, lock: await makeLock(), dir: serverDir, packsDir, fetch, cacheDir: cache, userAgent: "ua" });
+  const lock = await makeLock();
+  lock.files = lock.files.filter((f) => f.slug !== "waystones");
+  chmodSync(join(serverDir, "mods"), 0o555);
+  try {
+    await expect(buildServer({ profile, lock, dir: serverDir, packsDir, fetch, cacheDir: cache, userAgent: "ua" })).rejects.toThrow(
+      /Stop the server if it's running/,
+    );
+  } finally {
+    chmodSync(join(serverDir, "mods"), 0o755);
+  }
+});
+
+test("a corrupt marker is a plain-English error", async () => {
+  mkdirSync(serverDir, { recursive: true });
+  writeFileSync(join(serverDir, MARKER), "{not json");
+  await expect(readMarker(serverDir)).rejects.toThrow(/is damaged/);
 });

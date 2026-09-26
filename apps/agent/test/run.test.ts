@@ -6,6 +6,7 @@ import { readConfig } from "../src/run/config";
 import { crashSummary, suspectMod } from "../src/run/crash";
 import { ensureEula } from "../src/run/eula";
 import { parseJavaMajor } from "../src/run/java";
+import { whileChildRuns } from "../src/run/server";
 
 test("parseJavaMajor handles modern and legacy version strings", () => {
   expect(parseJavaMajor('openjdk version "25.0.4" 2026-07-21\nOpenJDK Runtime')).toBe(25);
@@ -69,4 +70,24 @@ describe("crash summary", () => {
   test("crashSummary with no log says so", async () => {
     expect(await crashSummary(mkdtempSync(join(tmpdir(), "mc-empty-")))).toContain("exited before writing a log");
   });
+});
+
+// Final review I4
+test("a corrupt agent config is a plain-English error", async () => {
+  const cfg = mkdtempSync(join(tmpdir(), "mc-cfg-"));
+  writeFileSync(join(cfg, "config.json"), "{oops");
+  await expect(readConfig(cfg)).rejects.toThrow(/config\.json is damaged/);
+});
+
+// Final review M8 (re-graded Important)
+test("whileChildRuns ignores Ctrl+C in mc-host until the child exits", async () => {
+  const before = process.listenerCount("SIGINT");
+  let release!: () => void;
+  const child = new Promise<number>((r) => (release = () => r(0)));
+  const running = whileChildRuns(child);
+  expect(process.listenerCount("SIGINT")).toBe(before + 1);
+  process.emit("SIGINT");
+  release();
+  expect(await running).toBe(0);
+  expect(process.listenerCount("SIGINT")).toBe(before);
 });

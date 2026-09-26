@@ -36,7 +36,7 @@ const FIXED_MTIME = new Date("2000-01-01T00:00:00Z");
 export function clientEnv(f: LockEntry): MrpackFile["env"] | null {
   if (f.side === "server") return null;
   if (f.side === "both") return { client: f.clientOptional ? "optional" : "required", server: "required" };
-  return { client: "optional", server: "unsupported" };
+  return { client: f.clientOptional ? "optional" : "required", server: "unsupported" };
 }
 
 export async function mrpackIndex(lock: Lockfile, meta: { name: string; summary?: string }): Promise<MrpackIndex> {
@@ -83,5 +83,5 @@ export async function buildMrpack(
 
 /** True when a vanilla client can join: no file is required on the client. */
 export function isVanillaCompatible(lock: Lockfile): boolean {
-  return !lock.files.some((f) => f.side === "both" && !f.clientOptional);
+  return !lock.files.some((f) => f.side !== "server" && !f.clientOptional);
 }

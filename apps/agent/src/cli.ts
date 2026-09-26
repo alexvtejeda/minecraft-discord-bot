@@ -6,7 +6,7 @@ import { cacheDir, configDir } from "./paths";
 
 export type Command =
   | { kind: "resolve"; name: string; check?: string; addReady: boolean; profilesDir: string }
-  | { kind: "build-server"; name: string; dir: string; packsDir?: string; profilesDir: string }
+  | { kind: "build-server"; name: string; dir: string; packsDir?: string; force: boolean; profilesDir: string }
   | { kind: "build-mrpack"; name: string; out: string; profilesDir: string }
   | { kind: "run"; dir: string }
   | { kind: "help" };
@@ -17,8 +17,9 @@ export const USAGE = `mc-host profile <command>
       Pin exact mod versions into profiles/<profile>.lock.json.
       --check        only report which mods exist for another Minecraft version
       --add-ready    move "waiting" mods that now have a build into "mods"
-  build-server <profile> <dir> [--packs <folder>]
+  build-server <profile> <dir> [--packs <folder>] [--force]
       Put the Fabric server, server-side mods and datapacks in <dir>.
+      --force        build even if <dir> holds another profile's world
   build-mrpack <profile> <out.mrpack>
       Write a modpack that Prism Launcher can import.
   run <dir>
@@ -37,6 +38,7 @@ export function parseCommand(argv: string[]): Command {
         check: { type: "string" },
         "add-ready": { type: "boolean", default: false },
         packs: { type: "string" },
+        force: { type: "boolean", default: false },
         profiles: { type: "string", default: "profiles" },
         help: { type: "boolean", short: "h", default: false },
       },
@@ -56,7 +58,7 @@ export function parseCommand(argv: string[]): Command {
     case "resolve":
       return { kind: "resolve", name: need(a, "<profile>"), check: values.check, addReady: values["add-ready"] ?? false, profilesDir };
     case "build-server":
-      return { kind: "build-server", name: need(a, "<profile>"), dir: need(b, "<dir>"), packsDir: values.packs, profilesDir };
+      return { kind: "build-server", name: need(a, "<profile>"), dir: need(b, "<dir>"), packsDir: values.packs, force: values.force ?? false, profilesDir };
     case "build-mrpack":
       return { kind: "build-mrpack", name: need(a, "<profile>"), out: need(b, "<out.mrpack>"), profilesDir };
     case "run":

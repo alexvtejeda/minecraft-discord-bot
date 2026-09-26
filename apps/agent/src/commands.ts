@@ -126,6 +126,7 @@ async function cmdBuildServer(cmd: Extract<Command, { kind: "build-server" }>, d
     lock,
     dir: cmd.dir,
     packsDir: cmd.packsDir,
+    force: cmd.force,
     fetch: deps.fetch,
     cacheDir: deps.cacheDir,
     userAgent: USER_AGENT,
@@ -149,6 +150,9 @@ async function cmdBuildMrpack(cmd: Extract<Command, { kind: "build-mrpack" }>, d
 
 async function cmdRun(cmd: Extract<Command, { kind: "run" }>, deps: Deps): Promise<void> {
   const marker = await readMarker(cmd.dir);
+  if (!marker.complete) {
+    throw new UserError(`The last build of "${marker.profile}" in ${cmd.dir} didn't finish. Run "mc-host profile build-server ${marker.profile} ${cmd.dir}" again.`);
+  }
   const java = javaMajor(deps.javaBin);
   if (java === null) {
     throw new UserError(`Java isn't installed or isn't on your PATH. Minecraft ${marker.minecraft} needs Java ${marker.javaMajor}.`);

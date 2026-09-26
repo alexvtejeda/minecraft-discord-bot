@@ -22,7 +22,13 @@ export async function fetchVerified(url: string, sha512: string | undefined, o: 
   await mkdir(dirname(path), { recursive: true });
   const name = decodeURIComponent(basename(new URL(url).pathname));
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const res = await o.fetch(url, { headers: { "User-Agent": o.userAgent } });
+    let res: Response;
+    try {
+      res = await o.fetch(url, { headers: { "User-Agent": o.userAgent } });
+    } catch (err) {
+      if (attempt < 2) continue;
+      throw new UserError(`Couldn't download ${name} (${(err as Error).message}). Check your internet connection and try again.`);
+    }
     if (!res.ok) {
       throw new UserError(`Couldn't download ${name} (HTTP ${res.status}). Check your internet connection and try again.`);
     }

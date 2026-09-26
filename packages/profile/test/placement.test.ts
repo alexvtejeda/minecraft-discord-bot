@@ -14,7 +14,7 @@ test("placementOf and sideOf round-trip", () => {
   expect(sideOf(placementOf("server"))).toEqual({ side: "server", clientOptional: false });
   expect(sideOf(placementOf("both"))).toEqual({ side: "both", clientOptional: false });
   expect(sideOf(placementOf("both", true))).toEqual({ side: "both", clientOptional: true });
-  expect(sideOf(placementOf("client-optional"))).toEqual({ side: "client-optional", clientOptional: false });
+  expect(sideOf(placementOf("client-optional"))).toEqual({ side: "client-optional", clientOptional: true });
 });
 
 test("merge widens: server + both(required) = both required", () => {
@@ -36,7 +36,7 @@ test("clampToProject keeps a server-only library off clients", () => {
 
 test("clampToProject keeps a client-only library off the server", () => {
   const clamped = clampToProject(placementOf("both", true), project("required", "unsupported"));
-  expect(sideOf(clamped)).toEqual({ side: "client-optional", clientOptional: false });
+  expect(sideOf(clamped)).toEqual({ side: "client-optional", clientOptional: true });
 });
 
 test("sideFromMetadata", () => {
@@ -44,4 +44,10 @@ test("sideFromMetadata", () => {
   expect(sideFromMetadata(project("required", "required"))).toBe("both");
   expect(sideFromMetadata(project("optional", "required"))).toBe("server");
   expect(sideFromMetadata(project("unsupported", "required"))).toBe("server");
+});
+
+// Final review I3
+test("a client-only library that a both mod requires stays required on the client", () => {
+  const clamped = clampToProject(placementOf("both"), project("required", "unsupported"));
+  expect(sideOf(clamped)).toEqual({ side: "client-optional", clientOptional: false });
 });

@@ -58,7 +58,9 @@ test("gives up after maxAttempts with a plain-English UserError", async () => {
 
 test("does not retry other 4xx errors", async () => {
   const s = sequence([new Response("", { status: 400 })]);
-  await expect(getJson({ fetch: s.fetch, userAgent: "ua" }, "https://x.test/a")).rejects.toThrow(/HTTP 400/);
+  const p = getJson({ fetch: s.fetch, userAgent: "ua" }, "https://x.test/a");
+  await expect(p).rejects.toBeInstanceOf(UserError);
+  await expect(p).rejects.toThrow(/x\.test refused the request \(HTTP 400\)/);
   expect(s.urls.length).toBe(1);
 });
 

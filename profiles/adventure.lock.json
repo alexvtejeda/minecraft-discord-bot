@@ -18,7 +18,7 @@
       "sha512": "048a0979807afb96bae7801b7445746c985081bb55fab9b80b286036234a9869cc84f83c40ab77a2600b7e06ad44178ee17935b706b751c9b38f87ebc6e180f8",
       "size": 60760,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -243,7 +243,7 @@
       "sha512": "cd0fdc5a275a851b3d72e3e699c957671f293f5c87951736ad83adcdabaa58f533e9791110a227c7817b312269c32c063121b183a39d8c11a22e55d2c76cdb25",
       "size": 2849091,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -258,7 +258,7 @@
       "sha512": "1359d6576214fffadcb7bd4202bfd1606c827ab6c75143cbc7747269ed7d4131f5db226a914b9a924cac92e596c7994e6fe3303671ff8d5a2dcd41caf613e7ae",
       "size": 1038435,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -273,7 +273,7 @@
       "sha512": "1e64160d88effd1c7d33fc43aeac01f375ce45613e4f7486d7d98465c947656233a931dcf5633918ed13aba106382d57b9b6d02be16e030662110153f0772951",
       "size": 2360510,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": true
     },
@@ -303,7 +303,7 @@
       "sha512": "fcb388d602fe48fc67f6c8870ed005eb75956e77685bd03cac44f9548c559e8b5a40261a63905fd9644c877b75df39a2129a9a4413769602ed7fcfd864766fa2",
       "size": 349490,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": true,
       "prerelease": true
     },
@@ -438,7 +438,7 @@
       "sha512": "f3f260f204b8ce5e8777c2c73f537956755ec61f3817b0b78b5e5568e8aa40f14891f146475075109747665c7c88a45ca0ca9a8df3c68d79c58ecdaa8d8c4b93",
       "size": 1908068,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     },
@@ -618,7 +618,7 @@
       "sha512": "86de35d7c6ae10441d9a1e7f14656a87dc3cfa17487b122ea5bfa6f322b56bfa1b96662903a36f2ff0e0d579644474510c4463ea21dea8223b8931d6dbf64e61",
       "size": 2229348,
       "side": "client-optional",
-      "clientOptional": false,
+      "clientOptional": true,
       "auto": false,
       "prerelease": false
     }

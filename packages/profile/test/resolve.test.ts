@@ -28,6 +28,7 @@ describe("resolveProfile", () => {
       ["lithium", "server", false],
       ["sodium", "client-optional", false],
     ]);
+    expect(lock.files[1]!.clientOptional).toBe(true);
     expect(lock.files[0]).toMatchObject({
       projectId: "LITHIUM",
       versionId: "lithium-v1",
@@ -210,4 +211,13 @@ test("checkAvailability reports every mod and waiting mod for another version", 
     { slug: "lootr", available: true, waiting: true },
     { slug: "ghost", available: false, waiting: true },
   ]);
+});
+
+// Final review I3
+test("a client-only library required by a both mod is locked as required on the client", async () => {
+  const mr = new FakeModrinth();
+  const lib = mr.add("client-lib", [{}], { client: "required", server: "unsupported" });
+  mr.add("waystones", [{ dependencies: [dep(lib)] }]);
+  const { lock } = await resolveProfile(makeProfile({ mods: [{ modrinth: "waystones", side: "both" }] }), deps(mr));
+  expect(lock.files.find((f) => f.slug === "client-lib")).toMatchObject({ side: "client-optional", clientOptional: false, auto: true });
 });

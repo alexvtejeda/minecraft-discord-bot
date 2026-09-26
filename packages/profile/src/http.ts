@@ -30,7 +30,11 @@ export async function getJson<T>(http: Http, url: string): Promise<T | null> {
     if (res.status === 404) return null;
     if (res.ok) return (await res.json()) as T;
     last = `HTTP ${res.status}`;
-    if (res.status !== 429 && res.status < 500) throw new Error(`GET ${url} failed: ${last}`);
+    if (res.status !== 429 && res.status < 500) {
+      throw new UserError(
+        `${new URL(url).host} refused the request (${last}). If this keeps happening, the mod or version may have been removed.`,
+      );
+    }
     const reset = Number(res.headers.get("X-Ratelimit-Reset"));
     if (!isLast) await sleep(res.status === 429 && reset > 0 ? reset * 1000 : backoff(attempt));
   }

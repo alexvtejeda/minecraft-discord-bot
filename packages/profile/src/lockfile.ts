@@ -13,6 +13,7 @@ export interface LockEntry {
   sha512: string;
   size: number;
   side: Side;
+  /** Players may untick it in the launcher. Always false for "server". */
   clientOptional: boolean;
   /** Pulled in as a dependency, not listed in the profile. */
   auto: boolean;
