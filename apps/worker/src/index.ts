@@ -4,6 +4,7 @@ import { ApiError, handleError } from "./errors";
 import { dev } from "./routes/dev";
 import { agent } from "./routes/agent";
 import { admin } from "./routes/admin";
+import { enroll, setupScript } from "./routes/enroll";
 import { interactions } from "./routes/interactions";
 import { modpack } from "./routes/modpack";
 
@@ -16,6 +17,7 @@ app.route("/admin", admin);
 app.route("/agent", agent);
 app.route("/interactions", interactions);
 app.route("/modpack", modpack);
-// routers: mounted by later tasks
+app.route("/s", setupScript);
+app.route("/enroll", enroll);
 
 export default app;

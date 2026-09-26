@@ -2,6 +2,8 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "mc-bot",
 	"main": "src/index.ts",
+	// scripts/install.ps1 is bundled as a string and served at /s/<code>.
+	"rules": [{ "type": "Text", "globs": ["**/*.ps1"], "fallthrough": true }],
 	"compatibility_date": "2026-09-01",
 	"d1_databases": [
 		{

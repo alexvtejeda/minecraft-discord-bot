@@ -131,3 +131,12 @@ export const AdminStatusSchema = z.object({
   users: z.array(z.object({ discordId: z.string(), name: z.string(), revoked: z.boolean() })),
 });
 export type AdminStatus = z.infer<typeof AdminStatusSchema>;
+
+const EnrollCode = z.string().min(1).max(32);
+export const EnrollRequestSchema = z.object({ code: EnrollCode, join: z.boolean() });
+export type EnrollRequest = z.infer<typeof EnrollRequestSchema>;
+export const EnrollResponseSchema = z.object({ hostname: z.string(), authKey: z.string().optional(), token: z.string().optional() });
+export type EnrollResponse = z.infer<typeof EnrollResponseSchema>;
+/** nodeId is `Self.ID` from `tailscale status --json`, e.g. "nABC123CNTRL". */
+export const EnrollDeviceRequestSchema = z.object({ code: EnrollCode, nodeId: z.string().regex(/^[A-Za-z0-9]{1,64}$/) });
+export type EnrollDeviceRequest = z.infer<typeof EnrollDeviceRequestSchema>;
