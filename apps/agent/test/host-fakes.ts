@@ -44,6 +44,10 @@ export class FakeServer implements ServerProcess {
   exit(code: number): void {
     this.resolveExit(code);
   }
+
+  kill(): void {
+    this.exit(137);
+  }
 }
 
 export const SESSION = "session-0123456789";

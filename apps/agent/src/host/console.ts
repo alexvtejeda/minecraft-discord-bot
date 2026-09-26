@@ -5,6 +5,8 @@ export interface ServerProcess {
   write(line: string): void;
   onLine(cb: (line: string) => void): void;
   exited: Promise<number>;
+  /** Kill the process outright (the pack check's timeouts). */
+  kill(): void;
 }
 
 export class LineSplitter {
@@ -89,19 +91,27 @@ export function javaCommand(marker: ServerMarker, javaBin = "java"): string[] {
   return [javaBin, `-Xms${marker.memory.min}`, `-Xmx${marker.memory.max}`, "-jar", LAUNCHER_JAR, "nogui"];
 }
 
-/** Start the server with piped stdin/stdout; `echo` receives the raw output for the terminal. */
-export function spawnProcess(cmd: string[], cwd: string, echo: (text: string) => void): ServerProcess {
-  const proc = Bun.spawn(cmd, { cwd, stdin: "pipe", stdout: "pipe", stderr: "inherit" });
+/**
+ * Start the server with piped stdin/stdout; `echo` receives the raw output for the terminal.
+ * `exited` resolves once stdout is drained too, so no final line is lost.
+ */
+export function spawnProcess(
+  cmd: string[],
+  cwd: string,
+  echo: (text: string) => void,
+  o: { stderr?: "inherit" | "ignore" } = {},
+): ServerProcess {
+  const proc = Bun.spawn(cmd, { cwd, stdin: "pipe", stdout: "pipe", stderr: o.stderr ?? "inherit" });
   const listeners: ((line: string) => void)[] = [];
   const split = new LineSplitter();
   const decoder = new TextDecoder();
-  void (async () => {
+  const reading = (async () => {
     for await (const chunk of proc.stdout) {
       const text = decoder.decode(chunk, { stream: true });
       echo(text);
       for (const line of split.push(text)) for (const cb of listeners) cb(line);
     }
-  })();
+  })().catch(() => {});
   return {
     write(line) {
       try {
@@ -114,6 +124,12 @@ export function spawnProcess(cmd: string[], cwd: string, echo: (text: string) =>
     onLine(cb) {
       listeners.push(cb);
     },
-    exited: proc.exited,
+    exited: proc.exited.then(async (code) => {
+      await reading;
+      return code;
+    }),
+    kill() {
+      proc.kill("SIGKILL");
+    },
   };
 }
