@@ -1,0 +1,25 @@
+{
+  "name": "@mc/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@mc/profile": "workspace:*",
+    "@mc/protocol": "workspace:*",
+    "aws4fetch": "^1.0.20",
+    "hono": "^4.13.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.2.8",
+    "@cloudflare/workers-types": "^5.20260926.1",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.141.0"
+  }
+}

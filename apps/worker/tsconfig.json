@@ -6,9 +6,8 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["bun"],
-    "lib": ["ESNext"]
+    "lib": ["ESNext"],
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-plugin/types"]
   },
-  "include": ["packages/*/src", "packages/*/test", "apps/*/src", "apps/*/test"],
-  "exclude": ["apps/worker"]
+  "include": ["src", "test", "vitest.config.ts"]
 }

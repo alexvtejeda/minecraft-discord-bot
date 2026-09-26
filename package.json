@@ -3,8 +3,8 @@
   "private": true,
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "test": "bun test",
-    "typecheck": "tsc -p ."
+    "test": "bun test && bun run --cwd apps/worker test",
+    "typecheck": "tsc -p . && tsc -p apps/worker"
   },
   "devDependencies": {
     "@types/bun": "latest",
