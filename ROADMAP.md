@@ -48,7 +48,12 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md](do
 - [ ] `/tailnet revoke`
 - [ ] Test on a clean Windows machine, then invite friends
 
-## Phase 5: Update watcher
+## Phase 5: Proxy lobby (new feature, needs brainstorming)
+- [ ] A process that runs 24/7 with a fixed minecraft superflat world I can customize with [MoveMeNow](https://www.spigotmc.org/resources/movemenow.17/) plugin
+- [ ] Should be shown when there is no host running the server
+- [ ] Once a host is running  the real world, the user should be auto-redirected, we can use the AutoReconnect plugin
+
+## Phase 6: Update watcher
 - [ ] Cron job that polls Mojang's version manifest for new releases
 - [ ] `/watch channel`, and an announcement with a link to the changelog
 
