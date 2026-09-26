@@ -46,6 +46,7 @@ Setup guide: [docs/setup/phase-3.md](docs/setup/phase-3.md)
 
 ## Phase 4: Tailnet onboarding (friends onboarded after this phase)
 Design: [docs/superpowers/specs/2026-09-26-phase-4-onboarding-design.md](docs/superpowers/specs/2026-09-26-phase-4-onboarding-design.md)
+Setup guide: [docs/setup/phase-4.md](docs/setup/phase-4.md)
 - [ ] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
 - [ ] `install.ps1` (Windows), plus a release pipeline for prebuilt `mc-host` binaries
 - [ ] `/tailnet revoke`

@@ -43,6 +43,7 @@ invited once the rollout checklist passes.
 ```sql
 CREATE TABLE enrollments (
   discord_id TEXT PRIMARY KEY,       -- one pending code per user
+  name TEXT NOT NULL,                -- Discord username, for the hostname and the users row
   code_hash TEXT NOT NULL UNIQUE,
   mode TEXT NOT NULL CHECK (mode IN ('play', 'host')),
   created_at INTEGER NOT NULL,
@@ -77,7 +78,8 @@ an existing token.
 
 **`GET /s/<code>`**
 - Serves `scripts/install.ps1`, which is bundled into the Worker as text, with
-  `$WorkerUrl` and `$Code` filled in. It does not consume the code.
+  `$WorkerUrl`, `$Code` and `$Mode` filled in, so the admin step knows before redeeming
+  whether to add the firewall rule. It does not consume the code.
 - An unknown, used or expired code gets a short script that prints "This setup link
   expired. Run /setup in Discord again." and exits.
 
@@ -96,15 +98,17 @@ an existing token.
   replaces the `devices` row.
 
 **`/tailnet revoke <user>`** (maintainer, with a Confirm button, registered hidden like `/host`)
-1. Delete each of the user's devices through the Tailscale API. A 404 counts as success.
-2. Delete their `devices` rows and their pending enrollment.
-3. Set `users.revoked_at`, so their hosting token stops working.
+1. Set `users.revoked_at`, so their hosting token stops working, and delete their pending
+   enrollment. This happens first, so the person is blocked even if Tailscale fails.
+2. Delete each of the user's devices through the Tailscale API (a 404 counts as success),
+   and its `devices` row. If Tailscale fails partway, running the command again finishes the job.
 
 If they're hosting, the reply says their lease expires within 10 minutes, as after a crash.
 
 ### Tailscale client (`src/tailscale.ts`)
 
-- `mintAuthKey(env)` and `deleteDevice(env, nodeId)`, with an injected `fetch` for tests.
+- `mintAuthKey(env, description)` and `deleteDevice(env, nodeId)`. They use the global `fetch`,
+  which tests replace with `vi.spyOn`, as in Phase 3.
 - It exchanges `TS_OAUTH_CLIENT_ID` / `TS_OAUTH_CLIENT_SECRET` (new Worker secrets, from the
   OAuth client created in Phase 0) for an access token on each call. Traffic is a handful
   of calls a week.
@@ -117,6 +121,9 @@ If they're hosting, the reply says their lease expires within 10 minutes, as aft
 - The Worker compares it with `MIN_AGENT_VERSION` (a `vars` entry). An older version, or a
   missing header, gets 426: "mc-host is out of date. Run `/setup host` in Discord to update."
 - `mc-host --version` prints the version.
+- Agents of 0.1.0 and older don't know the new error codes, so they see "answered HTTP 426"
+  instead of the update message. Only the maintainer's Linux install is affected; re-run
+  `scripts/install.sh`.
 
 ## `install.ps1`
 
@@ -126,8 +133,8 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
    to a different tailnet, it stops, explains, and changes nothing. If it's already on the
    Minecraft tailnet, it skips the Tailscale install (step 2) and the join (step 4).
 2. **Admin step, with one UAC prompt,** only when there's something to do. An elevated PowerShell:
-   - installs Tailscale with `winget install Tailscale.Tailscale`, falling back to the
-     official MSI when winget is missing;
+   - installs Tailscale from the official MSI, downloaded before the prompt. The MSI works
+     on every Windows 10/11 and needs no winget;
    - host mode only: adds an inbound firewall rule for TCP 25565 and UDP 24454 from
      `100.64.0.0/10` only. Windows puts the Tailscale adapter on the Public profile, so
      without the rule players can't reach the server.
@@ -142,7 +149,7 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
    - download `mc-host-windows-x64.exe` from the latest release into
      `%LOCALAPPDATA%\mc-host\bin\mc-host.exe` and check it against `SHA256SUMS`;
    - add that folder to the user PATH;
-   - write `%APPDATA%\mc-host\config.json` with `{ "workerUrl", "token" }`;
+   - write `%APPDATA%\mc-host\agent.json` (the file the agent already reads) with `{ "workerUrl", "token" }`;
    - add a Start Menu shortcut, **Host Minecraft**, that opens a console titled "Minecraft
      host: press Ctrl+C to save and stop. Don't close this window." and runs `mc-host start`;
    - run `mc-host status` as a smoke test.
@@ -168,7 +175,7 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
 ## Release pipeline (`.github/workflows/release.yml`)
 
 - Triggered by a `v*` tag. It fails if the tag doesn't match `apps/agent/package.json`'s version.
-- It runs `bun run test` and `bun run typecheck`, then
+- It runs the Bun tests and the root typecheck (the Worker tests need Cloudflare credentials), then
   `bun build apps/agent/src/cli.ts --compile --target=bun-windows-x64` and `--target=bun-linux-x64`.
 - It writes `SHA256SUMS` and creates the GitHub Release with all three files.
 
