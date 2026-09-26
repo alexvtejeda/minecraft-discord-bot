@@ -1,5 +1,7 @@
 import type { Registry } from "../discord/registry";
 import { help } from "./help";
+import { modpack } from "./modpack";
+import { worldDownload } from "./world-download";
 
 export const REGISTRY: Registry = {
   groups: {
@@ -7,6 +9,6 @@ export const REGISTRY: Registry = {
     mod: "Mods in the active world",
     host: "The hosting session",
   },
-  commands: [help],
+  commands: [help, modpack, worldDownload],
   actions: [],
 };

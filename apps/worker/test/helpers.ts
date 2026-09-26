@@ -1,5 +1,5 @@
 import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
-import { profileHash, sha256Hex, type Lockfile } from "@mc/profile";
+import { profileHash, sha256Hex, type LockEntry, type Lockfile, type Side } from "@mc/profile";
 import { env } from "cloudflare:workers";
 import { makeProfile } from "../../../packages/profile/test/fakes";
 import type { Env } from "../src/env";
@@ -16,8 +16,27 @@ export async function addUser(id = "100000000000000001", name = "Alex"): Promise
   return token;
 }
 
-/** A matching profile + lockfile pair (no mod files) for world creation. */
-export async function worldFiles(over: Record<string, unknown> = {}) {
+export function lockEntry(slug: string, side: Side, over: Partial<LockEntry> = {}): LockEntry {
+  return {
+    slug,
+    projectId: slug.toUpperCase(),
+    versionId: `${slug}-v1`,
+    versionNumber: "1.0.0",
+    filename: `${slug}-1.0.0.jar`,
+    url: `https://cdn.modrinth.com/data/${slug.toUpperCase()}/versions/${slug}-v1/${slug}-1.0.0.jar`,
+    sha1: `sha1-${slug}`,
+    sha512: `sha512-${slug}`,
+    size: 100,
+    side,
+    clientOptional: false,
+    auto: false,
+    prerelease: false,
+    ...over,
+  };
+}
+
+/** A matching profile + lockfile pair for world creation. */
+export async function worldFiles(over: Record<string, unknown> = {}, files: LockEntry[] = []) {
   const profile = makeProfile(over);
   const lockfile: Lockfile = {
     lockfileVersion: 1,
@@ -27,19 +46,35 @@ export async function worldFiles(over: Record<string, unknown> = {}) {
     javaMajor: 25,
     fabricLoader: "0.19.5",
     fabricInstaller: "1.1.2",
-    files: [],
+    files,
   };
   return { profile, lockfile };
 }
 
 /** Insert a world row directly (id doubles as its name). */
-export async function addWorld(id = "w1", status: "active" | "archived" = "active"): Promise<void> {
-  const { profile, lockfile } = await worldFiles();
+export async function addWorld(
+  id = "w1",
+  status: "active" | "archived" = "active",
+  files: LockEntry[] = [],
+  profileOver: Record<string, unknown> = {},
+): Promise<void> {
+  const { profile, lockfile } = await worldFiles(profileOver, files);
   await env.DB.prepare(
     "INSERT INTO worlds (id, name, mc_version, profile_json, lockfile_json, status, pregen_done, created_at) VALUES (?, ?, '26.3', ?, ?, ?, 0, 1)",
   )
     .bind(id, id, JSON.stringify(profile), JSON.stringify(lockfile), status)
     .run();
+}
+
+/** Insert a snapshot row and put its object in R2. */
+export async function addSnapshot(worldId: string, rev: number, o: { by?: string; at?: number; data?: string } = {}): Promise<string> {
+  const key = `worlds/${worldId}/${rev}-00000000-0000-0000-0000-00000000000${rev % 10}.zip`;
+  const data = o.data ?? `rev ${rev}`;
+  await env.BUCKET.put(key, data);
+  await env.DB.prepare("INSERT INTO snapshots (world_id, rev, r2_key, size, sha256, uploaded_by, created_at) VALUES (?, ?, ?, ?, 'x', ?, ?)")
+    .bind(worldId, rev, key, data.length, o.by ?? "100000000000000001", o.at ?? rev * 1000)
+    .run();
+  return key;
 }
 
 export function envWith(over: Partial<Env>): Env {

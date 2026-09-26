@@ -5,6 +5,7 @@ import { dev } from "./routes/dev";
 import { agent } from "./routes/agent";
 import { admin } from "./routes/admin";
 import { interactions } from "./routes/interactions";
+import { modpack } from "./routes/modpack";
 
 export const app = new Hono<AppEnv>();
 app.onError(handleError);
@@ -14,6 +15,7 @@ app.route("/dev", dev);
 app.route("/admin", admin);
 app.route("/agent", agent);
 app.route("/interactions", interactions);
+app.route("/modpack", modpack);
 // routers: mounted by later tasks
 
 export default app;
