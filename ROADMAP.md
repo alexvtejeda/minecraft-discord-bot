@@ -32,9 +32,9 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md](docs/supe
 
 ## Phase 2b: Java and pack checks
 Design: [docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md](docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md)
-- [ ] Managed Temurin JRE on every host, Docker included (`MC_JAVA` overrides it)
-- [ ] `mc-host profile check-packs`: boot a test server and name the datapacks with errors
-- [ ] 2a leftovers: autosave rev bump, fresh `--replace` world with Chunky
+- [x] Managed Temurin JRE on every host, Docker included (`MC_JAVA` overrides it)
+- [x] `mc-host profile check-packs`: boot a test server and name the datapacks with errors
+- [x] 2a leftovers: autosave rev bump, fresh `--replace` world with Chunky
 
 ## Phase 3: Discord commands
 - [ ] Interactions endpoint and command registration

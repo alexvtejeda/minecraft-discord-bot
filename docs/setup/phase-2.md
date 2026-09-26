@@ -97,7 +97,7 @@ test world and the boot logs afterwards. A failed check always keeps its boot lo
 - [ ] `mc-host start`, then from another terminal `docker kill mc-host-agent` partway through the session. The next `mc-host start` asks "Your last session didn't finish uploading … Upload it now? [Y/n]". Enter uploads it.
 - [ ] `mc-host stop` from a second terminal stops a running session the same way Ctrl+C does.
 - [ ] `mc-host admin world create vanilla-plus --replace`, then `mc-host start`. Chunky starts pre-generating (`chunky progress` in the console shows it).
-- [ ] **2b:** after re-running `install.sh`, `docker run --rm --entrypoint sh mc-host:local -c 'command -v java || echo no-java'` prints `no-java`.
-- [ ] **2b:** `mc-host start` from an empty Java cache prints "Downloading Java 25 (… MB)…" before "Claimed", and hosting works as before. A second start doesn't download again.
-- [ ] **2b:** `mc-host profile check-packs adventure --packs datapacks --all` fails exactly `player head drops` and `double shulker shells`, and passes the other eight.
+- [x] **2b:** after re-running `install.sh`, `docker run --rm --entrypoint sh mc-host:local -c 'command -v java || echo no-java'` prints `no-java`.
+- [x] **2b:** `mc-host start` from an empty Java cache prints "Downloading Java 25 (… MB)…" before "Claimed", and hosting works as before. A second start doesn't download again.
+- [x] **2b:** `mc-host profile check-packs adventure --packs datapacks --all` fails exactly `player head drops` and `double shulker shells`, and passes the other eight.
 - [ ] **2b:** `mc-host profile check-packs adventure --packs datapacks --all --keep` leaves `check-logs/` with one log per boot.
