@@ -84,19 +84,31 @@ export async function createWorld(
   const id = crypto.randomUUID();
   const stmts: D1PreparedStatement[] = [];
   if (current) {
-    stmts.push(db.prepare("UPDATE worlds SET status = 'archived' WHERE id = ?").bind(current.id));
-    // The lease isn't held (checked above), but an expired row still carries its session; clear it
-    // so that session can't heartbeat back to life on the archived world.
-    stmts.push(db.prepare(`${CLEAR_LEASE} WHERE id = 1`));
+    // Guarded in SQL as well as above: a host may claim between the lease check and this batch.
+    stmts.push(
+      db.prepare(`UPDATE worlds SET status = 'archived' WHERE id = ?1 AND status = 'active' AND NOT ${LEASE_HELD_SQL}`).bind(current.id, o.now),
+    );
+    // An expired row still carries its session; clear it so that session can't heartbeat back
+    // to life on the archived world.
+    stmts.push(db.prepare(`${CLEAR_LEASE} WHERE id = 1 AND NOT ${LEASE_HELD_SQL.replace("?2", "?1")}`).bind(o.now));
   }
+  // Only inserts if the archive above went through (or there was no active world).
   stmts.push(
     db
       .prepare(
-        "INSERT INTO worlds (id, name, mc_version, profile_json, lockfile_json, status, pregen_done, created_at) VALUES (?, ?, ?, ?, ?, 'active', ?, ?)",
+        `INSERT INTO worlds (id, name, mc_version, profile_json, lockfile_json, status, pregen_done, created_at)
+         SELECT ?, ?, ?, ?, ?, 'active', ?, ? WHERE NOT EXISTS (SELECT 1 FROM worlds WHERE status = 'active')`,
       )
       .bind(id, o.name, o.lock.minecraft, JSON.stringify(o.profile), serializeLock(o.lock), o.imported ? 1 : 0, o.now),
   );
-  await db.batch(stmts);
+  const results = await db.batch(stmts);
+  if (results.at(-1)!.meta.changes !== 1) {
+    const lease = await readLease(db);
+    if (isHeld(lease, o.now)) {
+      throw new ApiError("lease_held", `Someone started hosting "${current?.name}" just now. Wait for them to stop.`, leaseInfo(lease));
+    }
+    throw new ApiError("conflict", "The active world changed while creating this one. Try again.");
+  }
   if (current) await pruneWorld(env, current.id, 1);
   return { id, name: o.name };
 }

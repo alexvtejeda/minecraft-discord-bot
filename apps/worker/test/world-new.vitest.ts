@@ -1,7 +1,8 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
-import { claimLease } from "../src/lease";
-import { BUNDLED_NAMES, bundledProfiles } from "../src/profiles";
+import { claimLease, readLease } from "../src/lease";
+import { BUNDLED_NAMES, bundledProfile, bundledProfiles } from "../src/profiles";
+import { createWorld } from "../src/worlds";
 import { ALEX, button, postInteraction, slash } from "./discord";
 import { addSnapshot, addUser, addWorld } from "./helpers";
 
@@ -106,5 +107,30 @@ describe("/world new", () => {
     await postInteraction(slash("world new", { name: "spring", profile: "adventure" }, M));
     expect((await postInteraction(button("x", M))).body.data.content).toBe("Cancelled. Nothing changed.");
     expect((await worlds()).results.map((w: any) => w.name)).toEqual(["w1"]);
+  });
+});
+
+describe("createWorld", () => {
+  it("won't archive the world under a host who claims between the check and the write", async () => {
+    await addWorld("w1");
+    const b = (await bundledProfile("adventure"))!;
+    // Someone runs `mc-host start` in the moment between createWorld's lease check and its batch.
+    const racing = new Proxy(env.DB, {
+      get(target, prop) {
+        if (prop === "batch") {
+          return async (stmts: D1PreparedStatement[]) => {
+            await claimLease(env.DB, { userId: ALEX, hostAddress: "100.64.0.3", worldId: "w1", now: Date.now() });
+            return target.batch(stmts);
+          };
+        }
+        const v = Reflect.get(target, prop);
+        return typeof v === "function" ? v.bind(target) : v;
+      },
+    });
+    await expect(
+      createWorld({ DB: racing, BUCKET: env.BUCKET }, { name: "spring", profile: b.profile, lock: b.lock, replace: true, imported: false, now: Date.now() }),
+    ).rejects.toMatchObject({ code: "lease_held" });
+    expect((await worlds()).results.map((w: any) => [w.name, w.status])).toEqual([["w1", "active"]]);
+    expect((await readLease(env.DB)).holder_id).toBe(ALEX);
   });
 });
