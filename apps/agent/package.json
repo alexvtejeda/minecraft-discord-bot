@@ -8,6 +8,9 @@
     "build": "bun build src/cli.ts --compile --outfile dist/mc-host"
   },
   "dependencies": {
-    "@mc/profile": "workspace:*"
+    "@mc/profile": "workspace:*",
+    "@mc/protocol": "workspace:*",
+    "fflate": "^0.8.2",
+    "zod": "^4.1.0"
   }
 }
