@@ -1,0 +1,118 @@
+{
+  "name": "vanilla-plus",
+  "description": "Vanilla with performance mods and Vanilla Tweaks. Vanilla clients can join; the modpack only adds optional extras.",
+  "minecraft": "26.3",
+  "loader": {
+    "fabric": "latest-stable"
+  },
+  "memory": {
+    "min": "2G",
+    "max": "4G"
+  },
+  "properties": {
+    "difficulty": "normal",
+    "view-distance": 10,
+    "simulation-distance": 8,
+    "motd": "Vanilla+ on the tailnet"
+  },
+  "mods": [
+    {
+      "modrinth": "fabric-api",
+      "side": "server"
+    },
+    {
+      "modrinth": "lithium",
+      "side": "server"
+    },
+    {
+      "modrinth": "ferrite-core",
+      "side": "server"
+    },
+    {
+      "modrinth": "c2me-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "scalablelux",
+      "side": "server"
+    },
+    {
+      "modrinth": "vmp-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "chunky",
+      "side": "server"
+    },
+    {
+      "modrinth": "spark",
+      "side": "server"
+    },
+    {
+      "modrinth": "simple-voice-chat",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "sodium",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "iris",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "immediatelyfast",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "entityculling",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "modmenu",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "appleskin",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "jade",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "xaeros-minimap",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "xaeros-world-map",
+      "side": "client-optional"
+    }
+  ],
+  "waiting": [],
+  "datapacks": [
+    "vt:afk-display",
+    "vt:armor-statues",
+    "vt:cauldron-concrete",
+    "vt:double-shulker-shells",
+    "vt:durability-ping",
+    "vt:fast-leaf-decay",
+    "vt:mini-blocks",
+    "vt:more-effective-tools",
+    "vt:more-mob-heads",
+    "vt:painting-picker",
+    "vt:player-head-drops",
+    "vt:silence-mobs",
+    "vt:spectator-conduit-power",
+    "vt:spectator-night-vision",
+    "vt:track-raw-statistics",
+    "vt:track-statistics",
+    "vt:unlock-all-recipes",
+    "vt:wood-stripper"
+  ],
+  "resourcePack": {
+    "pack": "vt:resources",
+    "require": false
+  }
+}

@@ -45,6 +45,13 @@ describe("resolveProfile", () => {
     expect(warnings[0]).toMatch(/lithium: only a beta build exists for Minecraft 26\.3, using 0\.9-beta/);
   });
 
+  test("an alpha-only mod gets grammatical wording", async () => {
+    const mr = new FakeModrinth();
+    mr.add("lithium", [{ version_type: "alpha", version_number: "0.1-alpha" }]);
+    const { warnings } = await resolveProfile(makeProfile(), deps(mr));
+    expect(warnings[0]).toBe("lithium: only an alpha build exists for Minecraft 26.3, using 0.1-alpha.");
+  });
+
   test("unknown slug suggests the closest match", async () => {
     const mr = new FakeModrinth();
     mr.searches.set("lithum", "lithium");

@@ -1,0 +1,187 @@
+{
+  "name": "adventure",
+  "description": "Structures, storage, backpacks and waystones on top of Vanilla+. Everyone needs the modpack.",
+  "minecraft": "26.3",
+  "loader": {
+    "fabric": "latest-stable"
+  },
+  "memory": {
+    "min": "2G",
+    "max": "6G"
+  },
+  "properties": {
+    "difficulty": "normal",
+    "view-distance": 10,
+    "simulation-distance": 8,
+    "motd": "Adventure on the tailnet"
+  },
+  "mods": [
+    {
+      "modrinth": "fabric-api",
+      "side": "server"
+    },
+    {
+      "modrinth": "lithium",
+      "side": "server"
+    },
+    {
+      "modrinth": "ferrite-core",
+      "side": "server"
+    },
+    {
+      "modrinth": "c2me-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "scalablelux",
+      "side": "server"
+    },
+    {
+      "modrinth": "vmp-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "chunky",
+      "side": "server"
+    },
+    {
+      "modrinth": "spark",
+      "side": "server"
+    },
+    {
+      "modrinth": "clumps",
+      "side": "server"
+    },
+    {
+      "modrinth": "universal-graves",
+      "side": "server"
+    },
+    {
+      "modrinth": "skinrestorer",
+      "side": "server"
+    },
+    {
+      "modrinth": "villagerconfig",
+      "side": "server"
+    },
+    {
+      "modrinth": "dungeons-and-taverns",
+      "side": "server"
+    },
+    {
+      "modrinth": "incendium",
+      "side": "server"
+    },
+    {
+      "modrinth": "nullscape",
+      "side": "server"
+    },
+    {
+      "modrinth": "towns-and-towers",
+      "side": "server"
+    },
+    {
+      "modrinth": "bartering-station",
+      "side": "both"
+    },
+    {
+      "modrinth": "easy-anvils",
+      "side": "both"
+    },
+    {
+      "modrinth": "natures-compass",
+      "side": "both"
+    },
+    {
+      "modrinth": "storagedrawers",
+      "side": "both"
+    },
+    {
+      "modrinth": "toms-storage",
+      "side": "both"
+    },
+    {
+      "modrinth": "trade-cycling",
+      "side": "both"
+    },
+    {
+      "modrinth": "travelersbackpack",
+      "side": "both"
+    },
+    {
+      "modrinth": "waystones",
+      "side": "both"
+    },
+    {
+      "modrinth": "underground-villages",
+      "side": "both"
+    },
+    {
+      "modrinth": "hammers-and-excavators-miners-dream",
+      "side": "both"
+    },
+    {
+      "modrinth": "simple-voice-chat",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "jade",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "jei",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "xaeros-minimap",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "badoptimizations",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "sodium",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "iris",
+      "side": "client-optional"
+    }
+  ],
+  "waiting": [
+    "lootr",
+    "carry-on",
+    "explorify",
+    "nether-chested",
+    "mrcrayfishs-furniture-mod-tools-refurbished",
+    "spiral-tower-villages",
+    "medieval-buildings",
+    "true-ending"
+  ],
+  "datapacks": [
+    "vt:afk-display",
+    "vt:armor-statues",
+    "vt:cauldron-concrete",
+    "vt:double-shulker-shells",
+    "vt:durability-ping",
+    "vt:fast-leaf-decay",
+    "vt:mini-blocks",
+    "vt:more-effective-tools",
+    "vt:more-mob-heads",
+    "vt:painting-picker",
+    "vt:player-head-drops",
+    "vt:silence-mobs",
+    "vt:spectator-conduit-power",
+    "vt:spectator-night-vision",
+    "vt:track-raw-statistics",
+    "vt:track-statistics",
+    "vt:unlock-all-recipes",
+    "vt:wood-stripper"
+  ],
+  "resourcePack": {
+    "pack": "vt:resources",
+    "require": false
+  }
+}

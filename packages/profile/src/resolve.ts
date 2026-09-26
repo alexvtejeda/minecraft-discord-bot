@@ -89,7 +89,7 @@ export async function resolveProfile(profile: Profile, deps: ResolveDeps): Promi
     if (!version) throw noBuildError(project, job, mc);
     if (version.version_type !== "release") {
       warnings.push(
-        `${project.title}: only a ${version.version_type} build exists for Minecraft ${mc}, using ${version.version_number}.`,
+        `${project.title}: only ${version.version_type === "alpha" ? "an" : "a"} ${version.version_type} build exists for Minecraft ${mc}, using ${version.version_number}.`,
       );
     }
 
