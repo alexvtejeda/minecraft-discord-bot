@@ -114,10 +114,12 @@ describe("/host release", () => {
     const preview = await postInteraction(slash("host release", {}, M), { env: announceEnv() });
     expect(preview.body.data.content).toContain(`<@${ALEX}> has been hosting for 2h`);
     const done = await postInteraction(button(confirmId(preview), M), { env: announceEnv() });
-    expect(done.body.data.content).toBe(`Released <@${ALEX}>'s session. Anyone can host now.`);
+    expect(done.body.data.content).toBe(
+      `Released <@${ALEX}>'s session, so anyone can host now. If their server is still running, their mc-host stops it within 2 minutes and keeps what wasn't saved on their PC instead of uploading it.`,
+    );
     expect((await readLease(env.DB)).holder_id).toBeNull();
     expect(posts.map((p) => p.body.content)).toEqual([
-      `🔴 A maintainer released <@${ALEX}>'s hosting session. Last save: rev 3, 25 min ago.`,
+      `🔴 A maintainer released <@${ALEX}>'s hosting session. If the server is still up, it shuts down within 2 minutes. The world is back to its last save: rev 3, 25 min ago.`,
     ]);
   });
 

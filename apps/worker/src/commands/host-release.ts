@@ -1,4 +1,4 @@
-import { announceReleased } from "../announce";
+import { announceReleased, HOST_NOTICE } from "../announce";
 import { confirmRow } from "../discord/confirm";
 import { ago, duration, mention } from "../discord/format";
 import type { Command, ConfirmAction } from "../discord/registry";
@@ -19,7 +19,7 @@ export const hostRelease: Command = {
     return reply(
       [
         `${mention(lease.holder_id!)} has been hosting for ${duration(c.now - (lease.claimed_at ?? c.now))}. Their last heartbeat was ${ago(c.now - lastBeat)}.`,
-        "Releasing lets someone else host. Anything since their last save may be lost.",
+        `Releasing lets someone else host right away. If their server is still running, their mc-host stops it within ${HOST_NOTICE}, and play since their last save isn't uploaded.`,
       ].join("\n"),
       confirmRow("release", [lease.session_id!.slice(0, SESSION_PREFIX)], "Release"),
     );
@@ -34,6 +34,8 @@ export const releaseAction: ConfirmAction = {
     const latest = lease.world_id ? await latestSnapshot(c.env.DB, lease.world_id) : null;
     await forceRelease(c.env.DB, c.now);
     announceReleased(c.env, c.exec, { holderId: lease.holder_id!, rev: latest?.rev ?? null, savedAt: latest?.created_at ?? null, now: c.now });
-    return update(`Released ${mention(lease.holder_id!)}'s session. Anyone can host now.`);
+    return update(
+      `Released ${mention(lease.holder_id!)}'s session, so anyone can host now. If their server is still running, their mc-host stops it within ${HOST_NOTICE} and keeps what wasn't saved on their PC instead of uploading it.`,
+    );
   },
 };
