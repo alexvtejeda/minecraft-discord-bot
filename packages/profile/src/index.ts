@@ -5,6 +5,8 @@ export * from "./http";
 export * from "./modrinth";
 export * from "./fabric";
 export * from "./mojang";
+export * from "./select";
+export * from "./placement";
 
 export const USER_AGENT =
   "alexvtejeda/minecraft-discord-bot/0.1.0 (github.com/alexvtejeda/minecraft-discord-bot)";
