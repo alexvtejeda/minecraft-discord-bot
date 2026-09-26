@@ -26,7 +26,7 @@ import type { Command } from "./cli";
 import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
-import { requireJava } from "./java/version";
+import { javaFor } from "./java/runtime";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
 
@@ -38,6 +38,7 @@ export interface Deps {
   ask: (question: string) => Promise<string>;
   /** Override the API clients (tests). Defaults to the live Modrinth, Fabric and Mojang APIs. */
   clients?: ResolveDeps;
+  /** MC_JAVA: run servers with this java instead of the managed one. */
   javaBin?: string;
   now?: () => number;
   /** Environment for MC_WORKER_URL / MC_TOKEN / MC_ADMIN_SECRET. Defaults to process.env. */
@@ -159,11 +160,11 @@ async function cmdRun(cmd: Extract<Command, { kind: "run" }>, deps: Deps): Promi
   if (!marker.complete) {
     throw new UserError(`The last build of "${marker.profile}" in ${cmd.dir} didn't finish. Run "mc-host profile build-server ${marker.profile} ${cmd.dir}" again.`);
   }
-  requireJava(marker, deps.javaBin);
   const agreed = await ensureEula({ configDir: deps.configDir, serverDir: cmd.dir, ask: deps.ask, log: deps.log });
   if (!agreed) throw new UserError("You need to agree to the EULA to run a server.");
+  const javaBin = await javaFor(marker, { cacheDir: deps.cacheDir, fetch: deps.fetch, userAgent: USER_AGENT, log: deps.log, override: deps.javaBin });
   const started = (deps.now ?? Date.now)();
-  const code = await runServer({ dir: cmd.dir, marker, javaBin: deps.javaBin });
+  const code = await runServer({ dir: cmd.dir, marker, javaBin });
   // 130/143: stopped with Ctrl+C or a terminate signal, which is a normal stop.
   if (code !== 0 && code !== 130 && code !== 143) {
     deps.log(await crashSummary(cmd.dir, started));

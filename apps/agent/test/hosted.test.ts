@@ -26,6 +26,7 @@ async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line:
     marker: MARKER,
     pregenDone: o.pregenDone ?? false,
     address: "100.64.0.3",
+    javaBin: "/jre/bin/java",
     unhook: () => void (unhooked = true),
     stopHeartbeat: () => void (prepHeartbeatStopped = true),
   };
@@ -37,8 +38,9 @@ async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line:
 const idx = (events: string[], e: string) => events.indexOf(e);
 
 test("a full session: Done, pre-generation, heartbeat, autosave, then a clean stop", async () => {
-  const { h, done, server, unhooked } = await started();
+  const { h, p, done, server, unhooked } = await started();
   expect(unhooked()).toBe(true);
+  expect(h.launches).toEqual([{ dir: p.serverDir, javaBin: "/jre/bin/java" }]);
   expect(await readState(h.deps.dataDir)).toEqual({ worldId: "w1", baseRev: 0, dirty: true });
 
   server.emit(DONE_LINE);

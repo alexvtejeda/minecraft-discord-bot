@@ -28,7 +28,7 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
   const startedAt = deps.now();
   await writeState(deps.dataDir, { worldId: p.world.id, baseRev: st.baseRev, dirty: true });
 
-  const server = deps.launch(p.serverDir, p.marker);
+  const server = deps.launch(p.serverDir, p.marker, p.javaBin);
   const con = new ServerConsole(server);
   const stop = (why?: string) => {
     if (st.stopping) {

@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseLock } from "@mc/profile";
@@ -99,10 +99,23 @@ test("run refuses when the EULA is declined", async () => {
   await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/You need to agree to the EULA/);
 });
 
-test("run refuses a Java that is too old", async () => {
+// Review focus 5
+test("run refuses an MC_JAVA that is too old, after the EULA", async () => {
   const srv = join(dir, "srv");
-  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 99, memory: { min: "1G", max: "1G" }, complete: true }));
-  await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/Minecraft 26\.3 needs Java 99, but this PC has Java \d+/);
+  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 25, memory: { min: "1G", max: "1G" }, complete: true }));
+  const old = join(dir, "java");
+  writeFileSync(old, `#!/bin/sh\necho 'openjdk version "21.0.1"' >&2\n`);
+  chmodSync(old, 0o755);
+  deps.ask = async () => "yes";
+  deps.javaBin = old;
+  await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow("Minecraft 26.3 needs Java 25, but this PC has Java 21");
+});
+
+test("run without MC_JAVA downloads Java, and says so when it can't", async () => {
+  const srv = join(dir, "srv");
+  await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 25, memory: { min: "1G", max: "1G" }, complete: true }));
+  deps.ask = async () => "yes";
+  await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow("Couldn't download Java 25 for this PC (Adoptium answered HTTP 500)");
 });
 
 // Final review I1

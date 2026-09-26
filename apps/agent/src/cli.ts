@@ -53,7 +53,8 @@ Maintainers (need MC_WORKER_URL and MC_ADMIN_SECRET)
   admin status
       Show the active world, the lease and everyone with a token.
 
-Options: --profiles <folder> (default: profiles)`;
+Options: --profiles <folder> (default: profiles)
+MC_JAVA=<path to java> runs servers with that Java instead of downloading one.`;
 
 export function parseCommand(argv: string[]): Command {
   let parsed;
@@ -143,6 +144,7 @@ async function main(): Promise<void> {
       configDir: configDir(),
       dataDir: dataDir(),
       env: process.env,
+      javaBin: process.env.MC_JAVA || undefined,
       log: (line) => console.log(line),
       ask: async (q) => prompt(q) ?? "",
     });

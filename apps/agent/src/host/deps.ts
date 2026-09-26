@@ -24,8 +24,9 @@ export interface SessionDeps {
   address: () => string;
   build: (o: { profile: Profile; lock: Lockfile; dir: string }) => Promise<ServerMarker>;
   ensureEula: (serverDir: string) => Promise<boolean>;
-  checkJava: (marker: ServerMarker) => void;
-  launch: (dir: string, marker: ServerMarker) => ServerProcess;
+  /** Path to a Java for this Minecraft version, downloading it the first time. */
+  ensureJava: (need: { minecraft: string; javaMajor: number }) => Promise<string>;
+  launch: (dir: string, marker: ServerMarker, javaBin: string) => ServerProcess;
   forwardInput: (cb: ((line: string) => void) | null) => void;
   download: (url: string, dest: string) => Promise<void>;
   upload: (target: { url: string; headers: Record<string, string> }, file: string) => Promise<void>;

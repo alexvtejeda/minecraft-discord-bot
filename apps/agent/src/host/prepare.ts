@@ -16,6 +16,8 @@ export interface Prepared {
   serverDir: string;
   levelName: string;
   marker: ServerMarker;
+  /** The java binary the server is launched with. */
+  javaBin: string;
   pregenDone: boolean;
   address: string;
   /** Remove prepare's Ctrl+C handler; the run phase installs its own. */
@@ -65,6 +67,8 @@ export async function prepare(deps: SessionDeps): Promise<Prepared> {
   await mkdir(serverDir, { recursive: true });
   // Ask about the EULA before claiming, so nobody holds the lease while reading it.
   if (!(await deps.ensureEula(serverDir))) throw new UserError("You need to agree to the EULA to host a server.");
+  // Java can be a 58 MB download, so it's fetched before claiming too.
+  const javaBin = await deps.ensureJava(lock);
 
   const address = deps.address();
   const claim = await deps.api.claim(address);
@@ -106,8 +110,7 @@ export async function prepare(deps: SessionDeps): Promise<Prepared> {
     // Writes eula.txt again in case the folder was just moved aside and recreated.
     await deps.ensureEula(serverDir);
     const marker = await deps.build({ profile: { ...profile, datapacks: [] }, lock, dir: serverDir });
-    deps.checkJava(marker);
-    return { world, sessionId: claim.sessionId, baseRev, serverDir, levelName, marker, pregenDone: manifest.pregenDone, address, unhook, stopHeartbeat };
+    return { world, sessionId: claim.sessionId, baseRev, serverDir, levelName, marker, javaBin, pregenDone: manifest.pregenDone, address, unhook, stopHeartbeat };
   } catch (err) {
     stopHeartbeat();
     unhook();

@@ -194,6 +194,7 @@ export interface Harness {
   forwarded: { cb: ((line: string) => void) | null };
   exits: number[];
   builds: { profile: Profile; dir: string }[];
+  launches: { dir: string; javaBin: string }[];
 }
 
 export function makeHarness(
@@ -212,6 +213,7 @@ export function makeHarness(
     forwarded: { cb: null },
     exits: [],
     builds: [],
+    launches: [],
   };
   const deps: SessionDeps = {
     api: h.api,
@@ -229,8 +231,9 @@ export function makeHarness(
       return MARKER;
     },
     ensureEula: async () => true,
-    checkJava: () => {},
-    launch: () => {
+    ensureJava: async () => "/jre/bin/java",
+    launch: (dir, _marker, javaBin) => {
+      h.launches.push({ dir, javaBin });
       const s = new FakeServer(o.respond, events);
       h.servers.push(s);
       return s;

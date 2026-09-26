@@ -4,7 +4,7 @@ import type { Deps } from "../commands";
 import { dataDir as defaultDataDir } from "../paths";
 import { crashSummary } from "../run/crash";
 import { ensureEula } from "../run/eula";
-import { requireJava } from "../java/version";
+import { javaFor } from "../java/runtime";
 import { buildServer, readMarker } from "../server/build";
 import { tailnetAddress } from "./address";
 import { createAgentApi, hhmm } from "./api";
@@ -37,8 +37,9 @@ function sessionDeps(deps: Deps, cfg: HostConfig, input: TerminalInput): Session
       return readMarker(dir);
     },
     ensureEula: (serverDir) => ensureEula({ configDir: deps.configDir, serverDir, ask, log: deps.log }),
-    checkJava: (marker) => requireJava(marker, deps.javaBin),
-    launch: (dir, marker) => spawnProcess(javaCommand(marker, deps.javaBin), dir, (text) => process.stdout.write(text)),
+    ensureJava: (need) =>
+      javaFor(need, { cacheDir: deps.cacheDir, fetch: deps.fetch, userAgent: USER_AGENT, log: deps.log, override: deps.javaBin }),
+    launch: (dir, marker, javaBin) => spawnProcess(javaCommand(marker, javaBin), dir, (text) => process.stdout.write(text)),
     forwardInput: (cb) => input.forwardTo(cb),
     download: (url, dest) => downloadTo(deps.fetch, url, dest),
     upload: (target, file) => uploadFile(deps.fetch, target, file),

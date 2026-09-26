@@ -172,3 +172,23 @@ test("a failure after the claim stops the heartbeat too", async () => {
   h.timers.fire(HEARTBEAT_MS);
   expect(h.events).not.toContain("api:heartbeat");
 });
+
+test("gets Java before claiming, and hands it to the run phase", async () => {
+  const h = makeHarness(await manifestFor());
+  h.deps.ensureJava = async (need) => {
+    h.events.push(`java ${need.minecraft} ${need.javaMajor}`);
+    return "/jre/bin/java";
+  };
+  const p = await prepare(h.deps);
+  expect(h.events.slice(0, 3)).toEqual(["api:manifest", "java 26.3 25", "api:claim 100.64.0.3"]);
+  expect(p.javaBin).toBe("/jre/bin/java");
+});
+
+test("a failed Java download never claims the lease", async () => {
+  const h = makeHarness(await manifestFor());
+  h.deps.ensureJava = async () => {
+    throw new UserError("Couldn't download Java 25 for this PC (offline). Check your internet and try again.");
+  };
+  await expect(prepare(h.deps)).rejects.toThrow("Couldn't download Java 25");
+  expect(h.events.some((e) => e.startsWith("api:claim"))).toBe(false);
+});
