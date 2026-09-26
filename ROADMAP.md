@@ -13,10 +13,12 @@ Friends get onboarded after Phase 4 is done. Phase 5 can be added while they're 
 - [x] New Tailscale account for the Minecraft tailnet: apply `infra/tailscale/policy.hujson` (single `tag:mc-player`, port 25565 only), OAuth client with the Auth Keys + Devices Core write scopes
 
 ## Phase 1: Server config
-- [ ] World profile format: MC version, Fabric loader, seed, properties, datapacks, mods with side
-- [ ] Baseline server-side mods and recommended client mods (`profiles/`)
-- [ ] Client-zip builder
-- [ ] Run a profile locally on Fedora from start to finish
+Design: [docs/superpowers/specs/2026-09-25-phase-1-profiles-design.md](docs/superpowers/specs/2026-09-25-phase-1-profiles-design.md)
+- [ ] Profile schema and lockfile (`packages/profile`), resolved from Modrinth with a `waiting` list
+- [ ] `vanilla-plus` and `adventure` profiles for 26.3 (`profiles/`)
+- [ ] Server builder and `.mrpack` builder for Prism Launcher
+- [ ] Voice chat port (UDP 24454) in the tailnet policy
+- [ ] Run `adventure` locally on Fedora and join it through Prism
 
 ## Phase 2: Hosting
 - [ ] Worker skeleton with D1 and R2 (wrangler)

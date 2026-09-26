@@ -1,7 +1,7 @@
 # Minecraft Discord Bot — Design
 
 Date: 2026-09-25
-Status: Approved architecture; Phase 1 detail pending its own brainstorm
+Status: Approved architecture. Phase 1 detail: [2026-09-25-phase-1-profiles-design.md](2026-09-25-phase-1-profiles-design.md)
 
 ## Goal
 
