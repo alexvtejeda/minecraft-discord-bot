@@ -5,7 +5,7 @@ import { parseLock, parseProfile, UserError } from "@mc/profile";
 import type { Manifest } from "@mc/protocol";
 import type { ServerMarker } from "../server/build";
 import { hhmm } from "./api";
-import { mb, yes, type SessionDeps } from "./deps";
+import { HEARTBEAT_MS, mb, yes, type SessionDeps } from "./deps";
 import { lastSaveTime, moveToRecovered, readState, serverDirFor, writeState } from "./state";
 import { fetchSnapshot, uploadSnapshot } from "./sync";
 
@@ -20,6 +20,8 @@ export interface Prepared {
   address: string;
   /** Remove prepare's Ctrl+C handler; the run phase installs its own. */
   unhook: () => void;
+  /** Stop prepare's heartbeat; the run phase starts its own. */
+  stopHeartbeat: () => void;
 }
 
 /**
@@ -67,7 +69,12 @@ export async function prepare(deps: SessionDeps): Promise<Prepared> {
   const address = deps.address();
   const claim = await deps.api.claim(address);
   const release = () => deps.api.release(claim.sessionId).catch(() => {});
+  // Downloads, the build and a recovery upload can outlast the lease, so keep it alive from here on.
+  const stopHeartbeat = deps.timers.every(HEARTBEAT_MS, () => {
+    deps.api.heartbeat(claim.sessionId).catch(() => {});
+  });
   const unhook = deps.onStopSignal(() => {
+    stopHeartbeat();
     deps.log("Cancelled. Releasing the lease…");
     void release().then(() => deps.exit(130));
   });
@@ -100,8 +107,9 @@ export async function prepare(deps: SessionDeps): Promise<Prepared> {
     await deps.ensureEula(serverDir);
     const marker = await deps.build({ profile: { ...profile, datapacks: [] }, lock, dir: serverDir });
     deps.checkJava(marker);
-    return { world, sessionId: claim.sessionId, baseRev, serverDir, levelName, marker, pregenDone: manifest.pregenDone, address, unhook };
+    return { world, sessionId: claim.sessionId, baseRev, serverDir, levelName, marker, pregenDone: manifest.pregenDone, address, unhook, stopHeartbeat };
   } catch (err) {
+    stopHeartbeat();
     unhook();
     await release();
     throw err;

@@ -1,7 +1,7 @@
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { UserError } from "@mc/profile";
-import type { SnapshotRef } from "@mc/protocol";
+import type { SnapshotRef, UploadTarget } from "@mc/protocol";
 import { LeaseLostError, StaleRevError } from "./api";
 import { DOWNLOAD_ATTEMPTS, UPLOAD_ATTEMPTS, type SessionDeps } from "./deps";
 import { ChecksumError, extractSnapshot, zipSnapshot } from "./snapshot";
@@ -17,10 +17,16 @@ export async function pushZip(
   zipped: { sha256: string; size: number },
 ): Promise<number> {
   let last: Error | null = null;
+  // Once the PUT has succeeded, retries repeat only the commit: its reply may have been lost after
+  // it landed, and asking for a new upload URL would then look like the world moved on.
+  let target: UploadTarget | null = null;
   for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt++) {
     try {
-      const target = await deps.api.uploadUrl({ sessionId: o.sessionId, baseRev: o.baseRev, ...zipped });
-      await deps.upload(target, file);
+      if (!target) {
+        const next = await deps.api.uploadUrl({ sessionId: o.sessionId, baseRev: o.baseRev, ...zipped });
+        await deps.upload(next, file);
+        target = next;
+      }
       return await deps.api.commit({ sessionId: o.sessionId, rev: target.rev, key: target.key, ...zipped, pregenDone: o.pregenDone });
     } catch (err) {
       if (err instanceof LeaseLostError || err instanceof StaleRevError) throw err;

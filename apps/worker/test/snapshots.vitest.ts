@@ -2,7 +2,8 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { app } from "../src/index";
 import { readLease } from "../src/lease";
-import { addUser, call, worldFiles } from "./helpers";
+import { commitSnapshot } from "../src/snapshots";
+import { addUser, call, envWith, worldFiles } from "./helpers";
 
 let alex: string;
 let worldId: string;
@@ -149,5 +150,37 @@ describe("import", () => {
     const r = await importData(bytes("x"));
     expect(r.status).toBe(409);
     expect(r.body.error).toBe("lease_held");
+  });
+});
+
+describe("commit retries", () => {
+  async function uploaded(s: string, data: Uint8Array) {
+    const sha256 = await hex(data);
+    const t = await call("POST", "/agent/snapshot/upload-url", { token: alex, body: { sessionId: s, baseRev: 0, size: data.length, sha256 } });
+    await app.request(t.body.url, { method: "PUT", headers: t.body.headers, body: data }, env);
+    return { sessionId: s, rev: t.body.rev as number, key: t.body.key as string, size: data.length, sha256 };
+  }
+
+  it("a retried commit that already landed answers ok instead of stale_rev", async () => {
+    const body = await uploaded(await claim(), bytes("once"));
+    expect((await call("POST", "/agent/snapshot/commit", { token: alex, body })).body).toEqual({ rev: 1 });
+    const again = await call("POST", "/agent/snapshot/commit", { token: alex, body });
+    expect(again.status).toBe(200);
+    expect(again.body).toEqual({ rev: 1 });
+  });
+
+  it("a failing prune doesn't turn a landed commit into an error", async () => {
+    const body = await uploaded(await claim(), bytes("x"));
+    const bucket = new Proxy(env.BUCKET, {
+      get(target, prop) {
+        if (prop === "list") return async () => {
+          throw new Error("R2 list failed");
+        };
+        const v = (target as any)[prop];
+        return typeof v === "function" ? v.bind(target) : v;
+      },
+    });
+    await commitSnapshot(envWith({ BUCKET: bucket }), { ...body, worldId, uploadedBy: "x", now: 1 });
+    expect((await readLease(env.DB)).base_rev).toBe(1);
   });
 });

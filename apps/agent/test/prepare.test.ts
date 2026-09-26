@@ -3,9 +3,10 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, utimesSync, writeFile
 import { join } from "node:path";
 import { UserError } from "@mc/profile";
 import { LeaseHeldError } from "../src/host/api";
+import { HEARTBEAT_MS } from "../src/host/deps";
 import { prepare } from "../src/host/prepare";
 import { readState, serverDirFor, writeState } from "../src/host/state";
-import { fixtureSnapshot, makeHarness, manifestFor, MARKER, type Harness } from "./host-fakes";
+import { fixtureSnapshot, makeHarness, manifestFor, MARKER, until, type Harness } from "./host-fakes";
 
 /** Leave this PC as if its last session never finished uploading. */
 async function dirtyPc(h: Harness, baseRev: number, o: { worldId?: string; levelName?: string } = {}) {
@@ -147,4 +148,27 @@ test("declining the EULA stops before claiming", async () => {
   h.deps.ensureEula = async () => false;
   await expect(prepare(h.deps)).rejects.toThrow("agree to the EULA");
   expect(h.events.some((e) => e.startsWith("api:claim"))).toBe(false);
+});
+
+test("heartbeats from the claim on, until the run phase stops it", async () => {
+  const h = makeHarness(await manifestFor());
+  h.deps.build = async () => {
+    h.timers.fire(HEARTBEAT_MS);
+    return MARKER;
+  };
+  const p = await prepare(h.deps);
+  await until(() => h.events.includes("api:heartbeat"));
+  p.stopHeartbeat();
+  h.timers.fire(HEARTBEAT_MS);
+  expect(h.events.filter((e) => e === "api:heartbeat")).toHaveLength(1);
+});
+
+test("a failure after the claim stops the heartbeat too", async () => {
+  const h = makeHarness(await manifestFor());
+  h.deps.build = async () => {
+    throw new UserError("Couldn't download lithium.jar");
+  };
+  await expect(prepare(h.deps)).rejects.toThrow("lithium.jar");
+  h.timers.fire(HEARTBEAT_MS);
+  expect(h.events).not.toContain("api:heartbeat");
 });

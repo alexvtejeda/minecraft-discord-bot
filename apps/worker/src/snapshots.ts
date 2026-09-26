@@ -84,7 +84,17 @@ export async function commitSnapshot(
   ]);
   if (results[0]!.meta.changes !== 1) {
     if (o.sessionId !== null && (await readLease(db)).session_id !== o.sessionId) throw leaseLostError();
-    throw new ApiError("stale_rev", `Rev ${o.rev} can't be committed because the world has moved on.`);
+    // A retry of a commit that already landed (its reply was lost) is not an error.
+    const landed = await db
+      .prepare("SELECT 1 FROM snapshots WHERE world_id = ? AND rev = ? AND r2_key = ?")
+      .bind(o.worldId, o.rev, o.key)
+      .first();
+    if (!landed) throw new ApiError("stale_rev", `Rev ${o.rev} can't be committed because the world has moved on.`);
   }
-  await pruneWorld(env, o.worldId, KEEP_SNAPSHOTS);
+  // Best effort: the commit has landed, so a failed cleanup must not turn it into an error.
+  try {
+    await pruneWorld(env, o.worldId, KEEP_SNAPSHOTS);
+  } catch (err) {
+    console.error("pruning snapshots failed", err);
+  }
 }

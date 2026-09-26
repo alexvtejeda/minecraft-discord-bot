@@ -14,7 +14,7 @@ export interface LeaseRow {
   expires_at: number | null;
 }
 
-const CLEAR =
+export const CLEAR_LEASE =
   "UPDATE lease SET holder_id = NULL, session_id = NULL, world_id = NULL, base_rev = NULL, host_address = NULL, claimed_at = NULL, expires_at = NULL";
 
 export function leaseLostError(): ApiError {
@@ -75,14 +75,14 @@ export async function heartbeatLease(db: D1Database, sessionId: string, now: num
 }
 
 export async function releaseLease(db: D1Database, sessionId: string): Promise<void> {
-  const r = await db.prepare(`${CLEAR} WHERE id = 1 AND session_id = ?`).bind(sessionId).run();
+  const r = await db.prepare(`${CLEAR_LEASE} WHERE id = 1 AND session_id = ?`).bind(sessionId).run();
   if (r.meta.changes !== 1) throw leaseLostError();
 }
 
 /** Maintainer override for a stuck lease. Returns who held it, or null if nobody did. */
 export async function forceRelease(db: D1Database, now: number): Promise<LeaseInfo | null> {
   const l = await readLease(db);
-  await db.prepare(`${CLEAR} WHERE id = 1`).run();
+  await db.prepare(`${CLEAR_LEASE} WHERE id = 1`).run();
   return isHeld(l, now) ? leaseInfo(l) : null;
 }
 

@@ -1,7 +1,7 @@
 import { parseLock, parseProfile, profileHash, serializeLock, type Lockfile, type Profile } from "@mc/profile";
 import type { Env } from "./env";
 import { ApiError } from "./errors";
-import { isHeld, leaseInfo, readLease } from "./lease";
+import { CLEAR_LEASE, isHeld, leaseInfo, readLease } from "./lease";
 
 export interface WorldRow {
   id: string;
@@ -83,7 +83,12 @@ export async function createWorld(
   }
   const id = crypto.randomUUID();
   const stmts: D1PreparedStatement[] = [];
-  if (current) stmts.push(db.prepare("UPDATE worlds SET status = 'archived' WHERE id = ?").bind(current.id));
+  if (current) {
+    stmts.push(db.prepare("UPDATE worlds SET status = 'archived' WHERE id = ?").bind(current.id));
+    // The lease isn't held (checked above), but an expired row still carries its session; clear it
+    // so that session can't heartbeat back to life on the archived world.
+    stmts.push(db.prepare(`${CLEAR_LEASE} WHERE id = 1`));
+  }
   stmts.push(
     db
       .prepare(

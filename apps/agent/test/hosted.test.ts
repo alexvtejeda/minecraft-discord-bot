@@ -16,6 +16,7 @@ async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line:
   mkdirSync(join(serverDir, "world"), { recursive: true });
   writeFileSync(join(serverDir, "world", "level.dat"), "live");
   let unhooked = false;
+  let prepHeartbeatStopped = false;
   const p: Prepared = {
     world: { id: "w1", name: "test", minecraft: "26.3" },
     sessionId: SESSION,
@@ -26,11 +27,12 @@ async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line:
     pregenDone: o.pregenDone ?? false,
     address: "100.64.0.3",
     unhook: () => void (unhooked = true),
+    stopHeartbeat: () => void (prepHeartbeatStopped = true),
   };
   const done = runHosted(h.deps, p);
   done.catch(() => {});
   await until(() => h.servers.length === 1);
-  return { h, p, done, server: h.servers[0]!, unhooked: () => unhooked };
+  return { h, p, done, server: h.servers[0]!, unhooked: () => unhooked, prepHeartbeatStopped: () => prepHeartbeatStopped };
 }
 const idx = (events: string[], e: string) => events.indexOf(e);
 
@@ -151,4 +153,25 @@ test("Ctrl+C during an autosave upload waits for it, then uploads the next rev",
   await done;
   const order = h.events.filter((e) => e.startsWith("api:uploadUrl") || e.startsWith("api:commit"));
   expect(order).toEqual(["api:uploadUrl 0", "api:commit 1", "api:uploadUrl 1", "api:commit 2"]);
+});
+
+test("a commit whose reply was lost is retried on its own, not uploaded again", async () => {
+  const { h, done } = await started();
+  h.api.commitFailures = 1;
+  h.stop.fire();
+  await done;
+  const order = h.events.filter((e) => e.startsWith("api:uploadUrl") || e.startsWith("api:commit"));
+  expect(order).toEqual(["api:uploadUrl 0", "api:commit 1", "api:commit 1"]);
+  expect(h.events.at(-1)).toBe("api:release");
+});
+
+test("the run phase takes over the heartbeat and keeps it going through the final upload", async () => {
+  const { h, done, prepHeartbeatStopped } = await started();
+  expect(prepHeartbeatStopped()).toBe(true);
+  h.deps.upload = async () => {
+    h.timers.fire(HEARTBEAT_MS);
+  };
+  h.stop.fire();
+  await done;
+  expect(h.events.indexOf("api:heartbeat")).toBeGreaterThan(h.events.indexOf("server:stop"));
 });

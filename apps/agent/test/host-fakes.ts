@@ -108,6 +108,8 @@ export class FakeApi implements AgentApi {
   claimError: Error | null = null;
   heartbeatError: Error | null = null;
   uploadFailures = 0;
+  /** Commits that land but whose reply is lost. */
+  commitFailures = 0;
   commits: CommitRequest[] = [];
 
   constructor(
@@ -145,6 +147,10 @@ export class FakeApi implements AgentApi {
     this.events.push(`api:commit ${req.rev}${req.pregenDone ? " pregen" : ""}`);
     this.commits.push(req);
     this.latestRev = req.rev;
+    if (this.commitFailures > 0) {
+      this.commitFailures--;
+      throw new OfflineError("The server list at https://w.test answered HTTP 502.");
+    }
     return req.rev;
   }
 }

@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { hashToken } from "../src/auth";
-import { claimLease } from "../src/lease";
+import { claimLease, heartbeatLease, LEASE_MS } from "../src/lease";
 import { addUser, call, worldFiles } from "./helpers";
 
 async function createWorld(name: string, extra: Record<string, unknown> = {}) {
@@ -61,6 +61,19 @@ describe("POST /admin/worlds", () => {
     expect(revs.results.map((x) => x.rev)).toEqual([3]);
     const listed = await env.BUCKET.list({ prefix: `worlds/${old.id}/` });
     expect(listed.objects.map((o) => o.key)).toEqual([`worlds/${old.id}/3-x.zip`]);
+  });
+
+  it("--replace clears an expired lease, so its old session can't come back", async () => {
+    await createWorld("stale");
+    await addUser("100000000000000001", "Alex");
+    const old = await claimLease(env.DB, {
+      userId: "100000000000000001",
+      hostAddress: "100.64.0.3",
+      worldId: (await worldRow("stale"))!.id,
+      now: Date.now() - 2 * LEASE_MS,
+    });
+    expect((await createWorld("fresh", { replace: true })).status).toBe(201);
+    await expect(heartbeatLease(env.DB, old.sessionId, Date.now())).rejects.toMatchObject({ code: "lease_lost" });
   });
 
   it("--replace fails while someone holds the lease", async () => {

@@ -42,6 +42,8 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
   // Stays installed until the very end, so Ctrl+C during the final upload can't abandon it.
   const unhookStop = deps.onStopSignal(() => stop("Stopping the server and saving the world. This can take a minute…"));
   p.unhook();
+  // Runs until the final upload and release are done, not just while Java runs.
+  let stopHeartbeat = () => {};
   try {
     deps.forwardInput((line) => con.send(line));
 
@@ -67,11 +69,12 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
       if (CHUNKY_DONE.test(line)) st.pregenDone = true;
     });
 
-    const stopHeartbeat = deps.timers.every(HEARTBEAT_MS, () => {
+    stopHeartbeat = deps.timers.every(HEARTBEAT_MS, () => {
       deps.api.heartbeat(p.sessionId).catch((err) => {
         if (isLeaseProblem(err)) loseLease(err);
       });
     });
+    p.stopHeartbeat();
 
     const autosave = async () => {
       const file = join(tmpDirFor(deps.dataDir), "autosave.zip");
@@ -106,7 +109,6 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
     });
 
     const code = await server.exited;
-    stopHeartbeat();
     stopAutosave();
     deps.forwardInput(null);
     if (st.saving) await st.saving;
@@ -115,6 +117,7 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
     if (NORMAL_EXIT.has(code)) return await finalUpload(deps, p, st);
     return await crashed(deps, p, st, code, startedAt);
   } finally {
+    stopHeartbeat();
     unhookStop();
   }
 }
