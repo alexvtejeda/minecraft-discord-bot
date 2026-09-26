@@ -167,8 +167,8 @@ async function cmdRun(cmd: Extract<Command, { kind: "run" }>, deps: Deps): Promi
   const javaBin = await javaFor(marker, { cacheDir: deps.cacheDir, fetch: deps.fetch, userAgent: USER_AGENT, log: deps.log, override: deps.javaBin });
   const started = (deps.now ?? Date.now)();
   const code = await runServer({ dir: cmd.dir, marker, javaBin });
-  // 130/143: stopped with Ctrl+C or a terminate signal, which is a normal stop.
-  if (code !== 0 && code !== 130 && code !== 143) {
+  // 129/130/143: stopped by a closed window, Ctrl+C or a terminate signal, which is a normal stop.
+  if (code !== 0 && code !== 129 && code !== 130 && code !== 143) {
     deps.log(await crashSummary(cmd.dir, started));
     throw new UserError(`The server stopped with exit code ${code}.`);
   }

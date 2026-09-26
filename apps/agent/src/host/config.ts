@@ -18,7 +18,8 @@ export interface AdminConfig {
 async function readJson(path: string): Promise<Record<string, unknown>> {
   if (!existsSync(path)) return {};
   try {
-    return JSON.parse(await readFile(path, "utf8")) as Record<string, unknown>;
+    // Windows PowerShell 5.1 writes UTF-8 with a BOM, which JSON.parse rejects.
+    return JSON.parse((await readFile(path, "utf8")).replace(/^\uFEFF/, "")) as Record<string, unknown>;
   } catch {
     throw new UserError(`${path} is damaged. Fix or delete it, then try again.`);
   }

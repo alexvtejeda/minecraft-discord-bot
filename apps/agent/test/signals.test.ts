@@ -21,7 +21,7 @@ async function signalFixture(signal: NodeJS.Signals, mode = ""): Promise<{ code:
   return { code: await proc.exited, out };
 }
 
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
   test(`a stop handler hooked after another was unhooked still gets ${signal}`, async () => {
     const { code, out } = await signalFixture(signal);
     expect(code).toBe(0);
@@ -33,4 +33,5 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 test("with every handler unhooked, the signal ends the process as usual", async () => {
   expect((await signalFixture("SIGINT", "unhooked")).code).toBe(130);
   expect((await signalFixture("SIGTERM", "unhooked")).code).toBe(143);
+  expect((await signalFixture("SIGHUP", "unhooked")).code).toBe(129);
 });

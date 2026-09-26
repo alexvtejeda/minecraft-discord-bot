@@ -12,8 +12,8 @@ import { pushZip, uploadSnapshot } from "./sync";
 const DONE = /\]: Done \(\d/;
 const SAVED = /Saved the game/;
 const CHUNKY_DONE = /\[Chunky\] Task finished for minecraft:overworld/;
-/** 130/143: Java stopped by Ctrl+C or SIGTERM, which is a normal stop. */
-const NORMAL_EXIT = new Set([0, 130, 143]);
+/** 129/130/143: Java stopped by a closed window, Ctrl+C or SIGTERM, which is a normal stop. */
+const NORMAL_EXIT = new Set([0, 129, 130, 143]);
 
 const isLeaseProblem = (err: unknown): err is Error => err instanceof LeaseLostError || err instanceof StaleRevError;
 

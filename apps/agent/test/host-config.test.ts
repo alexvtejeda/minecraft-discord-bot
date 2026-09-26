@@ -36,3 +36,9 @@ test("admin config needs a worker URL and the admin secret", async () => {
   expect(await loadAdminConfig({}, d)).toEqual({ workerUrl: "https://f.test", secret: "fs" });
   await expect(loadAdminConfig({}, dir())).rejects.toThrow("MC_ADMIN_SECRET");
 });
+
+test("agent.json written by Windows PowerShell with a BOM still loads", async () => {
+  const d = dir();
+  writeFileSync(join(d, "agent.json"), "\uFEFF" + JSON.stringify({ workerUrl: "https://w.test", token: "t" }));
+  expect(await loadHostConfig({}, d)).toEqual({ workerUrl: "https://w.test", token: "t" });
+});
