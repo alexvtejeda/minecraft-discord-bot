@@ -8,7 +8,7 @@
     "deploy": "vitest run && wrangler deploy",
     "test": "vitest run",
     "typecheck": "tsc -p .",
-    "register": "bun scripts/register-commands.ts"
+    "register": "bun --env-file=../../.env scripts/register-commands.ts"
   },
   "dependencies": {
     "@mc/profile": "workspace:*",

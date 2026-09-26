@@ -1,5 +1,7 @@
 // Registers the slash commands in one Discord server (guild commands update instantly).
-// Usage: DISCORD_APP_ID=… DISCORD_GUILD_ID=… DISCORD_BOT_TOKEN=… bun run --cwd apps/worker register
+// Usage: bun run --cwd apps/worker register
+// It reads DISCORD_APP_ID, DISCORD_GUILD_ID and DISCORD_BOT_TOKEN from the repo's .env; variables
+// set in the shell win over the file.
 import { REGISTRY } from "../src/commands";
 import { toDiscordCommands } from "../src/discord/definitions";
 import { DISCORD_API } from "../src/discord/rest";
@@ -7,7 +9,7 @@ import { DISCORD_API } from "../src/discord/rest";
 function need(name: string): string {
   const value = process.env[name];
   if (!value) {
-    console.error(`Set ${name} first. See docs/setup/phase-3.md.`);
+    console.error(`Set ${name} in the repo's .env (or the shell) first. See docs/setup/phase-3.md.`);
     process.exit(1);
   }
   return value;

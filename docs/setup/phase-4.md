@@ -19,7 +19,7 @@ bunx wrangler secret put TS_OAUTH_CLIENT_SECRET
 ```bash
 bunx wrangler d1 migrations apply mc-bot --remote   # adds enrollments and devices
 bun run deploy
-DISCORD_APP_ID=<id> DISCORD_GUILD_ID=<id> DISCORD_BOT_TOKEN=<token> bun run register
+bun run register   # reads DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_BOT_TOKEN from the repo's .env
 ```
 
 In Server Settings → Integrations → your bot, allow the `MC Maintainer` role to use `/tailnet`

@@ -28,7 +28,7 @@ In the announcements channel's settings, give the bot View Channel and Send Mess
 
 ```bash
 bun run deploy
-DISCORD_APP_ID=<id> DISCORD_GUILD_ID=<id> DISCORD_BOT_TOKEN=<token> bun run register
+bun run register   # reads DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_BOT_TOKEN from the repo's .env
 ```
 `bun run deploy` runs the Worker tests first, so a profile edited without
 `mc-host profile resolve` stops the deploy instead of breaking `/world new`.
