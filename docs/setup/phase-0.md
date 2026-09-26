@@ -71,8 +71,8 @@ The repo is public, so never commit jars, worlds or secrets. `.gitignore` alread
 
 ## Done when
 
-- [ ] The bot appears (offline) in the member list of your Discord server
-- [ ] The `MC Maintainer` role exists and you have it
-- [ ] The R2 plan is active on Cloudflare
-- [ ] The Tailscale policy saved without test failures, and the OAuth client exists with `tag:mc-player`
-- [ ] All the secrets in the table above are saved in your password manager
+- [X] The bot appears (offline) in the member list of your Discord server
+- [X] The `MC Maintainer` role exists and you have it
+- [X] The R2 plan is active on Cloudflare
+- [X] The Tailscale policy saved without test failures, and the OAuth client exists with `tag:mc-player`
+- [X] All the secrets in the table above are saved in your password manager
