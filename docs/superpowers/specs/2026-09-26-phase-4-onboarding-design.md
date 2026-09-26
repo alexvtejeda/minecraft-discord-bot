@@ -146,7 +146,9 @@ Targets Windows PowerShell 5.1. It stays thin and straight-line, and every step 
 3. **Redeem** with `POST /enroll { code, join }`. `join` is false when the PC is already on
    the tailnet, so no auth key is minted. This happens after the install, so the 10-minute
    key doesn't expire while winget runs.
-4. **Join** with `tailscale up --auth-key=… --hostname=<hostname>`, then wait up to 60
+4. **Join** with `tailscale up --unattended --auth-key=… --hostname=<hostname>`. Without
+   `--unattended`, Windows Tailscale runs only while a program is connected to it, and the tray
+   app isn't running after a silent install, so it stops as soon as `up` exits. Then it waits up to 60
    seconds for a `100.x` address. On timeout it prints `tailscale status` and asks the
    user to paste it into Discord.
 5. **Report** `Self.ID` from `tailscale status --json` to `POST /enroll/device`.

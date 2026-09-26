@@ -111,7 +111,10 @@ exit 0
   # 4. Join
   if (-not $joined) {
     Say 'Joining the Minecraft network...'
-    & { $ErrorActionPreference = 'Continue'; & $TsExe up "--auth-key=$($r.authKey)" "--hostname=$($r.hostname)" | Out-Host }
+    # --unattended: otherwise Windows Tailscale only runs while a program is connected to it. The tray
+    # app isn't running after a silent install, so it would stop again the moment `up` exits.
+    $up = & { $ErrorActionPreference = 'Continue'; & $TsExe up --unattended "--auth-key=$($r.authKey)" "--hostname=$($r.hostname)" 2>&1 | Out-String }
+    if ($up.Trim()) { Write-Host $up.Trim() }
     $ip = $null
     for ($i = 0; $i -lt 60 -and -not $ip; $i++) {
       $st = TsStatus
@@ -119,7 +122,7 @@ exit 0
     }
     if (-not $ip) {
       $status = & { $ErrorActionPreference = 'Continue'; & $TsExe status 2>&1 | Out-String }
-      throw "Tailscale didn't connect. Paste the text below into Discord for a maintainer.`n$status"
+      throw "Tailscale didn't connect. Paste the text below into Discord for a maintainer.`n$($up.Trim())`n$status"
     }
   }
 
