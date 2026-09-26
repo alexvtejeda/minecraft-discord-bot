@@ -2,6 +2,7 @@ import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test"
 import { env } from "cloudflare:workers";
 import type { Env } from "../src/env";
 import { app } from "../src/index";
+import type { RequestMeta } from "../src/discord/registry";
 
 const hex = (b: Uint8Array) => [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
 
@@ -40,3 +41,62 @@ export async function postInteraction(
   } catch {}
   return { status: res.status, body: parsed };
 }
+
+export const ALEX = "100000000000000001";
+export const SAM = "100000000000000002";
+export const MAINTAINER_ROLE = "500000000000000001";
+
+type Who = { user?: string; maintainer?: boolean; noMember?: boolean };
+let seq = 0;
+
+function base(type: number, who: Who) {
+  const user = { id: who.user ?? ALEX, username: "someone" };
+  return {
+    id: `90000000000000${++seq}`,
+    application_id: env.DISCORD_APP_ID,
+    type,
+    token: `interaction-token-${seq}`,
+    version: 1,
+    guild_id: env.DISCORD_GUILD_ID,
+    ...(who.noMember ? { user } : { member: { user, roles: who.maintainer ? [MAINTAINER_ROLE] : [] } }),
+  };
+}
+
+function optionList(options: Record<string, string | number | boolean>, focused?: string) {
+  return Object.entries(options).map(([name, value]) => ({
+    name,
+    type: typeof value === "number" ? 4 : typeof value === "boolean" ? 5 : 3,
+    value,
+    ...(name === focused ? { focused: true } : {}),
+  }));
+}
+
+function commandData(path: string, options: Record<string, string | number | boolean>, focused?: string) {
+  const [name, sub] = path.split(" ");
+  const opts = optionList(options, focused);
+  return { id: "1", name, type: 1, options: sub ? [{ name: sub, type: 1, options: opts }] : opts };
+}
+
+export const slash = (path: string, options: Record<string, string | number | boolean> = {}, who: Who = {}) => ({
+  ...base(2, who),
+  data: commandData(path, options),
+});
+
+export const autocomplete = (path: string, options: Record<string, string | number | boolean>, focused: string, who: Who = {}) => ({
+  ...base(4, who),
+  data: commandData(path, options, focused),
+});
+
+export const button = (customId: string, who: Who = {}) => ({
+  ...base(3, who),
+  message: { id: "800000000000000001", content: "preview" },
+  data: { custom_id: customId, component_type: 2 },
+});
+
+export const requestMeta = (over: Partial<RequestMeta> = {}): RequestMeta => ({
+  env,
+  exec: createExecutionContext(),
+  requestUrl: "https://bot.test/interactions",
+  now: 1_000_000,
+  ...over,
+});

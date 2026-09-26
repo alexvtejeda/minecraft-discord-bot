@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { verifyDiscordRequest } from "../src/discord/verify";
-import { postInteraction } from "./discord";
+import { postInteraction, slash } from "./discord";
 
 describe("POST /interactions", () => {
   it("answers PING with PONG", async () => {
@@ -33,5 +33,14 @@ describe("verifyDiscordRequest", () => {
 
   it("is false without a timestamp", async () => {
     expect(await verifyDiscordRequest(env.DISCORD_PUBLIC_KEY, "ab".repeat(64), undefined, "{}")).toBe(false);
+  });
+});
+
+describe("POST /interactions dispatch", () => {
+  it("routes a slash command through the real registry", async () => {
+    const r = await postInteraction(slash("help"));
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ type: 4, data: { flags: 64 } });
+    expect(r.body.data.content).toContain("`/help`");
   });
 });

@@ -35,6 +35,8 @@ export default defineConfig(async () => {
     test: {
       include: ["test/**/*.vitest.ts"],
       setupFiles: ["./test/apply-migrations.ts"],
+      // discord-api-types ships CJS behind a thin ESM wrapper that the Workers pool can't read; pre-bundle it.
+      deps: { optimizer: { ssr: { enabled: true, include: ["discord-api-types/v10"] } } },
     },
   };
 });

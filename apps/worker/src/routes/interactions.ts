@@ -1,4 +1,7 @@
+import type { APIInteraction } from "discord-api-types/v10";
 import { Hono } from "hono";
+import { REGISTRY } from "../commands";
+import { handleInteraction } from "../discord/router";
 import { verifyDiscordRequest } from "../discord/verify";
 import type { AppEnv } from "../env";
 
@@ -13,7 +16,6 @@ interactions.post("/", async (c) => {
     body,
   );
   if (!ok) return c.text("Bad request signature.", 401);
-  const interaction = JSON.parse(body) as { type: number };
-  if (interaction.type === 1) return c.json({ type: 1 });
-  return c.json({ error: "unsupported" }, 400);
+  const interaction = JSON.parse(body) as APIInteraction;
+  return c.json(await handleInteraction(interaction, { env: c.env, exec: c.executionCtx as ExecutionContext, requestUrl: c.req.url, now: Date.now() }, REGISTRY));
 });
