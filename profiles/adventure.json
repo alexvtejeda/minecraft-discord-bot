@@ -160,18 +160,6 @@
     "medieval-buildings",
     "true-ending"
   ],
-  "datapacks": [
-    "vt:afk-display",
-    "vt:double-shulker-shells",
-    "vt:more-effective-tools",
-    "vt:painting-picker",
-    "vt:player-head-drops",
-    "vt:spectator-conduit-power",
-    "vt:spectator-night-vision",
-    "vt:track-raw-statistics",
-    "vt:track-statistics",
-    "vt:unlock-all-recipes"
-  ],
   "resourcePack": {
     "pack": "vt:resources",
     "require": false
