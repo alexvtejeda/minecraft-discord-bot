@@ -143,3 +143,37 @@ export async function pruneWorld(env: Pick<Env, "DB" | "BUCKET">, worldId: strin
   const doomed = [...new Set([...dropped.map((r) => r.r2_key), ...orphans])].filter((k) => !keptKeys.has(k));
   if (doomed.length) await env.BUCKET.delete(doomed);
 }
+
+const LEASE_HELD_SQL = "EXISTS (SELECT 1 FROM lease WHERE id = 1 AND holder_id IS NOT NULL AND expires_at >= ?2)";
+
+/** Archive the active world and keep only its last save. Refused while someone is hosting. */
+export async function archiveWorld(env: Pick<Env, "DB" | "BUCKET">, worldId: string, now: number): Promise<void> {
+  const db = env.DB;
+  const [archived] = await db.batch([
+    db.prepare(`UPDATE worlds SET status = 'archived' WHERE id = ?1 AND status = 'active' AND NOT ${LEASE_HELD_SQL}`).bind(worldId, now),
+    // Same reason as createWorld: an expired session must not heartbeat back onto an archived world.
+    db.prepare(`${CLEAR_LEASE} WHERE id = 1 AND NOT ${LEASE_HELD_SQL.replace("?2", "?1")}`).bind(now),
+  ]);
+  if (archived!.meta.changes !== 1) {
+    const lease = await readLease(db);
+    if (isHeld(lease, now)) throw new ApiError("lease_held", "Someone is hosting right now. Archive once they stop.", leaseInfo(lease));
+    throw new ApiError("conflict", "That world isn't the active one any more.");
+  }
+  await pruneWorld(env, worldId, 1);
+}
+
+/** Point the active world at a new profile and lockfile. The next `mc-host start` builds from them. */
+export async function repinWorld(db: D1Database, o: { worldId: string; profile: Profile; lock: Lockfile; now: number }): Promise<void> {
+  const r = await db
+    .prepare(
+      `UPDATE worlds SET profile_json = ?3, lockfile_json = ?4
+       WHERE id = ?1 AND status = 'active' AND NOT ${LEASE_HELD_SQL}`,
+    )
+    .bind(o.worldId, o.now, JSON.stringify(o.profile), serializeLock(o.lock))
+    .run();
+  if (r.meta.changes !== 1) {
+    const lease = await readLease(db);
+    if (isHeld(lease, o.now)) throw new ApiError("lease_held", "Someone is hosting right now. Re-pin once they stop.", leaseInfo(lease));
+    throw new ApiError("conflict", "That world isn't the active one any more.");
+  }
+}
