@@ -15,5 +15,8 @@ dist/
 world/
 worlds/
 recovered/
-server/
+/server/
 VanillaTweaks_*/
+
+# Editor swap files
+.*.swp
