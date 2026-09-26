@@ -24,3 +24,31 @@ test("plain-English errors for missing args, unknown commands and flags", () => 
   expect(() => parseCommand(["profile", "frobnicate"])).toThrow(/Unknown command "profile frobnicate"/);
   expect(() => parseCommand(["profile", "resolve", "x", "--nope"])).toThrow(/Unknown option/);
 });
+
+test("parses the hosting and admin commands", () => {
+  expect(parseCommand(["start"])).toEqual({ kind: "start" });
+  expect(parseCommand(["stop"])).toEqual({ kind: "stop" });
+  expect(parseCommand(["status"])).toEqual({ kind: "status" });
+  expect(parseCommand(["admin", "world", "create", "adventure", "--import", "srv", "--replace", "--name", "adv-1"])).toEqual({
+    kind: "admin-world-create",
+    profile: "adventure",
+    name: "adv-1",
+    replace: true,
+    importDir: "srv",
+    profilesDir: "profiles",
+  });
+  expect(parseCommand(["admin", "world", "create", "adventure"])).toMatchObject({ replace: false, name: undefined, importDir: undefined });
+  expect(parseCommand(["admin", "token", "mint", "123456789012345678", "Sam"])).toEqual({
+    kind: "admin-token-mint",
+    discordId: "123456789012345678",
+    name: "Sam",
+  });
+  expect(parseCommand(["admin", "lease", "release"])).toEqual({ kind: "admin-lease-release" });
+  expect(parseCommand(["admin", "status"])).toEqual({ kind: "admin-status" });
+});
+
+test("plain-English errors for admin and unknown commands", () => {
+  expect(() => parseCommand(["admin", "token", "mint", "123"])).toThrow(/Missing <name>/);
+  expect(() => parseCommand(["admin", "world", "delete"])).toThrow(/Unknown command "admin world delete"/);
+  expect(() => parseCommand(["host"])).toThrow(/Unknown command "host"/);
+});

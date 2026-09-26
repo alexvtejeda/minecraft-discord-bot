@@ -21,7 +21,9 @@ import {
   type Profile,
   type ResolveDeps,
 } from "@mc/profile";
+import { runAdmin } from "./admin";
 import type { Command } from "./cli";
+import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
 import { requireJava } from "./run/java";
@@ -38,6 +40,10 @@ export interface Deps {
   clients?: ResolveDeps;
   javaBin?: string;
   now?: () => number;
+  /** Environment for MC_WORKER_URL / MC_TOKEN / MC_ADMIN_SECRET. Defaults to process.env. */
+  env?: Record<string, string | undefined>;
+  /** Where hosted worlds and local state live. Defaults to paths.dataDir(). */
+  dataDir?: string;
 }
 
 function clientsFor(deps: Deps): ResolveDeps {
@@ -177,5 +183,16 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
       return cmdBuildMrpack(cmd, deps);
     case "run":
       return cmdRun(cmd, deps);
+    case "start":
+      return cmdStart(deps);
+    case "stop":
+      return cmdStop(deps);
+    case "status":
+      return cmdStatus(deps);
+    case "admin-world-create":
+    case "admin-token-mint":
+    case "admin-lease-release":
+    case "admin-status":
+      return runAdmin(cmd, deps);
   }
 }
