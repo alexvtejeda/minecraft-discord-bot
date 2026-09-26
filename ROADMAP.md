@@ -7,7 +7,7 @@ Phase 0 step-by-step guide: [docs/setup/phase-0.md](docs/setup/phase-0.md)
 Friends get onboarded after Phase 4 is done. Phase 5 can be added while they're already playing.
 
 ## Phase 0: Setup
-- [ ] Public repo on GitHub
+- [x] Public repo on GitHub (github.com/alexvtejeda/minecraft-discord-bot)
 - [ ] Cloudflare account, with R2 enabled
 - [ ] Discord application and bot, added to the server; create the `MC Maintainer` role
 - [ ] New Tailscale account for the Minecraft tailnet: apply `infra/tailscale/policy.hujson` (single `tag:mc-player`, port 25565 only), OAuth client with the Auth Keys + Devices Core write scopes
