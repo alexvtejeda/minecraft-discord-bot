@@ -24,7 +24,7 @@ import {
 import type { Command } from "./cli";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
-import { javaMajor } from "./run/java";
+import { requireJava } from "./run/java";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
 
@@ -153,13 +153,7 @@ async function cmdRun(cmd: Extract<Command, { kind: "run" }>, deps: Deps): Promi
   if (!marker.complete) {
     throw new UserError(`The last build of "${marker.profile}" in ${cmd.dir} didn't finish. Run "mc-host profile build-server ${marker.profile} ${cmd.dir}" again.`);
   }
-  const java = javaMajor(deps.javaBin);
-  if (java === null) {
-    throw new UserError(`Java isn't installed or isn't on your PATH. Minecraft ${marker.minecraft} needs Java ${marker.javaMajor}.`);
-  }
-  if (java < marker.javaMajor) {
-    throw new UserError(`Minecraft ${marker.minecraft} needs Java ${marker.javaMajor}, but this PC has Java ${java}. Install Java ${marker.javaMajor} and try again.`);
-  }
+  requireJava(marker, deps.javaBin);
   const agreed = await ensureEula({ configDir: deps.configDir, serverDir: cmd.dir, ask: deps.ask, log: deps.log });
   if (!agreed) throw new UserError("You need to agree to the EULA to run a server.");
   const started = (deps.now ?? Date.now)();

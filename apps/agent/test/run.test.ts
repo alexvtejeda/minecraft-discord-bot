@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readConfig } from "../src/run/config";
 import { crashSummary, suspectMod } from "../src/run/crash";
 import { ensureEula } from "../src/run/eula";
-import { parseJavaMajor } from "../src/run/java";
+import { parseJavaMajor, requireJava } from "../src/run/java";
 import { whileChildRuns } from "../src/run/server";
 
 test("parseJavaMajor handles modern and legacy version strings", () => {
@@ -90,4 +90,16 @@ test("whileChildRuns ignores Ctrl+C in mc-host until the child exits", async () 
   release();
   expect(await running).toBe(0);
   expect(process.listenerCount("SIGINT")).toBe(before);
+});
+
+test("requireJava explains a missing or too-old Java", () => {
+  const dir = mkdtempSync(join(tmpdir(), "mc-java-"));
+  const fake = join(dir, "java");
+  writeFileSync(fake, '#!/bin/sh\necho \'openjdk version "21.0.2"\' >&2\n');
+  chmodSync(fake, 0o755);
+  expect(() => requireJava({ minecraft: "26.3", javaMajor: 25 }, fake)).toThrow(
+    "Minecraft 26.3 needs Java 25, but this PC has Java 21. Install Java 25 and try again.",
+  );
+  expect(() => requireJava({ minecraft: "26.3", javaMajor: 21 }, fake)).not.toThrow();
+  expect(() => requireJava({ minecraft: "26.3", javaMajor: 25 }, join(dir, "nope"))).toThrow("Java isn't installed");
 });
