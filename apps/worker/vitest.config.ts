@@ -28,6 +28,8 @@ export default defineConfig(async () => {
             ANNOUNCE_CHANNEL_ID: "",
             MAINTAINER_ROLE_ID: "500000000000000001",
             DISCORD_BOT_TOKEN: "test-bot-token",
+            TS_OAUTH_CLIENT_ID: "ts-client",
+            TS_OAUTH_CLIENT_SECRET: "ts-secret",
           },
         },
       }),

@@ -95,6 +95,8 @@ export function envWith(over: Partial<Env>): Env {
     MAINTAINER_ROLE_ID: env.MAINTAINER_ROLE_ID,
     DISCORD_BOT_TOKEN: env.DISCORD_BOT_TOKEN,
     MIN_AGENT_VERSION: env.MIN_AGENT_VERSION,
+    TS_OAUTH_CLIENT_ID: env.TS_OAUTH_CLIENT_ID,
+    TS_OAUTH_CLIENT_SECRET: env.TS_OAUTH_CLIENT_SECRET,
     ...over,
   };
 }

@@ -18,6 +18,9 @@ export interface Env {
   DISCORD_BOT_TOKEN: string;
   /** Agents older than this (or sending no version) get 426 and are told to update. */
   MIN_AGENT_VERSION: string;
+  /** OAuth client on the Minecraft tailnet (scopes: auth_keys, devices:core; tag:mc-player). */
+  TS_OAUTH_CLIENT_ID: string;
+  TS_OAUTH_CLIENT_SECRET: string;
 }
 
 export type AppEnv = { Bindings: Env; Variables: { userId: string; userName: string } };
