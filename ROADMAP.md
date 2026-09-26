@@ -39,10 +39,10 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md](do
 ## Phase 3: Discord commands
 Design: [docs/superpowers/specs/2026-09-26-phase-3-discord-design.md](docs/superpowers/specs/2026-09-26-phase-3-discord-design.md)
 Setup guide: [docs/setup/phase-3.md](docs/setup/phase-3.md)
-- [ ] Interactions endpoint and command registration
-- [ ] `/help`, `/status`, `/join`, `/modpack`, `/world download`, `/mod list`
-- [ ] Maintainer commands: `/world new|rollback|archive|repin`, `/host release`, with Confirm buttons
-- [ ] Announcements when a server starts and stops
+- [x] Interactions endpoint and command registration
+- [x] `/help`, `/status`, `/join`, `/modpack`, `/world download`, `/mod list`
+- [x] Maintainer commands: `/world new|rollback|archive|repin`, `/host release`, with Confirm buttons
+- [x] Announcements when a server starts and stops
 
 ## Phase 4: Tailnet onboarding (friends onboarded after this phase)
 - [ ] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
