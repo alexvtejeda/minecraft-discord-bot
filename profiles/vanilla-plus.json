@@ -93,23 +93,15 @@
   "waiting": [],
   "datapacks": [
     "vt:afk-display",
-    "vt:armor-statues",
-    "vt:cauldron-concrete",
     "vt:double-shulker-shells",
-    "vt:durability-ping",
-    "vt:fast-leaf-decay",
-    "vt:mini-blocks",
     "vt:more-effective-tools",
-    "vt:more-mob-heads",
     "vt:painting-picker",
     "vt:player-head-drops",
-    "vt:silence-mobs",
     "vt:spectator-conduit-power",
     "vt:spectator-night-vision",
     "vt:track-raw-statistics",
     "vt:track-statistics",
-    "vt:unlock-all-recipes",
-    "vt:wood-stripper"
+    "vt:unlock-all-recipes"
   ],
   "resourcePack": {
     "pack": "vt:resources",
