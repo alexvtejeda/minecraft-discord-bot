@@ -28,7 +28,7 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md](docs/supe
 - [x] Admin API and `mc-host admin`: world create (with `--import`), token mint, lease release, status
 - [x] `mc-host start/stop`: console multiplexer, autosave, heartbeat, crash recovery, Chunky pre-generation
 - [x] `install.sh` (Linux, Docker + Tailscale sidecar)
-- [ ] Deploy, then host the imported `adventure` world from Fedora
+- [x] Deploy, then host the imported `adventure` world from Fedora
 
 ## Phase 2b: Java and pack checks
 - [ ] Portable JDK chosen per Minecraft version (Windows; Docker uses the Temurin image)
