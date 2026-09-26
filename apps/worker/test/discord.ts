@@ -48,11 +48,11 @@ export const ALEX = "100000000000000001";
 export const SAM = "100000000000000002";
 export const MAINTAINER_ROLE = "500000000000000001";
 
-type Who = { user?: string; maintainer?: boolean; noMember?: boolean };
+type Who = { user?: string; username?: string; maintainer?: boolean; noMember?: boolean };
 let seq = 0;
 
 function base(type: number, who: Who) {
-  const user = { id: who.user ?? ALEX, username: "someone" };
+  const user = { id: who.user ?? ALEX, username: who.username ?? "someone" };
   return {
     id: `90000000000000${++seq}`,
     application_id: env.DISCORD_APP_ID,

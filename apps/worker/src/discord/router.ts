@@ -38,6 +38,7 @@ export async function handleInteraction(i: APIInteraction, req: RequestMeta, reg
     ...req,
     origin: new URL(req.requestUrl).origin,
     userId: i.member?.user.id ?? i.user?.id ?? "",
+    userName: i.member?.user.username ?? i.user?.username ?? "",
     isMaintainer: !!req.env.MAINTAINER_ROLE_ID && roles.includes(req.env.MAINTAINER_ROLE_ID),
     registry,
   };

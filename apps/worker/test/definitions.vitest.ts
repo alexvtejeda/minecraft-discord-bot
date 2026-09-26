@@ -9,7 +9,7 @@ describe("toDiscordCommands", () => {
   const byName = Object.fromEntries(cmds.map((c) => [c.name, c]));
 
   it("registers each top-level command and group once", () => {
-    expect(cmds.map((c) => c.name).sort()).toEqual(["help", "host", "join", "mod", "modpack", "status", "world"]);
+    expect(cmds.map((c) => c.name).sort()).toEqual(["help", "host", "join", "mod", "modpack", "setup", "status", "world"]);
   });
 
   it("keeps names and descriptions inside Discord's limits", () => {

@@ -19,6 +19,8 @@ export interface Invocation extends RequestMeta {
   /** This Worker's origin, for links back to it. */
   origin: string;
   userId: string;
+  /** Discord username (not the display name); used for tailnet hostnames. */
+  userName: string;
   isMaintainer: boolean;
   registry: Registry;
 }

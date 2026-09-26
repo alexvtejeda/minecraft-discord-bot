@@ -9,6 +9,11 @@ export const help: Command = {
     const lines = c.registry.commands
       .filter((cmd) => !cmd.maintainerOnly || c.isMaintainer)
       .map((cmd) => `\`/${cmd.path}\` ${cmd.maintainerOnly ? "(maintainers) " : ""}— ${cmd.description}`);
-    return reply(["**Minecraft bot commands**", ...lines, "", "To host, run `mc-host start` on your PC."].join("\n"));
+    return reply([
+      "**Minecraft bot commands**",
+      ...lines,
+      "",
+      "New here? Run `/setup`. To host, run `/setup` with `host` set to True once, then `mc-host start` (or **Host Minecraft** in the Start Menu).",
+    ].join("\n"));
   },
 };
