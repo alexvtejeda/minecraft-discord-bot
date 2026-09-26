@@ -47,10 +47,10 @@ Setup guide: [docs/setup/phase-3.md](docs/setup/phase-3.md)
 ## Phase 4: Tailnet onboarding (friends onboarded after this phase)
 Design: [docs/superpowers/specs/2026-09-26-phase-4-onboarding-design.md](docs/superpowers/specs/2026-09-26-phase-4-onboarding-design.md)
 Setup guide: [docs/setup/phase-4.md](docs/setup/phase-4.md)
-- [ ] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
-- [ ] `install.ps1` (Windows), plus a release pipeline for prebuilt `mc-host` binaries
-- [ ] `/tailnet revoke`
-- [ ] Test on a clean Windows machine, then invite friends
+- [x] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
+- [x] `install.ps1` (Windows), plus a release pipeline for prebuilt `mc-host` binaries
+- [x] `/tailnet revoke`
+- [x] Test on a clean Windows machine, then invite friends
 
 ## Phase 5: Proxy lobby (new feature, needs brainstorming)
 - [ ] A process that runs 24/7 with a fixed minecraft superflat world I can customize with [MoveMeNow](https://www.spigotmc.org/resources/movemenow.17/) plugin
