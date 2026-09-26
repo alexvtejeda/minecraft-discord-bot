@@ -21,12 +21,17 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 - [x] Voice chat port (UDP 24454) in the tailnet policy
 - [x] Run `adventure` locally on Fedora and join it through Prism
 
-## Phase 2: Hosting
-- [ ] Worker skeleton with D1 and R2 (wrangler)
+## Phase 2a: Hosting core
+Design: [docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md](docs/superpowers/specs/2026-09-26-phase-2a-hosting-design.md)
+- [ ] Worker skeleton with D1 and R2 (wrangler), shared `packages/protocol`
 - [ ] Agent API: lease claim, heartbeat and release; snapshot upload and commit; manifest
-- [ ] `mc-host` agent: start/stop, autosave, heartbeat, crash recovery
-- [ ] Portable JDK chosen per Minecraft version
-- [ ] `install.ps1` (Windows) and `install.sh` (Linux, Docker + Tailscale sidecar)
+- [ ] Admin API and `mc-host admin`: world create (with `--import`), token mint, lease release, status
+- [ ] `mc-host start/stop`: console multiplexer, autosave, heartbeat, crash recovery, Chunky pre-generation
+- [ ] `install.sh` (Linux, Docker + Tailscale sidecar)
+- [ ] Deploy, then host the imported `adventure` world from Fedora
+
+## Phase 2b: Java and pack checks
+- [ ] Portable JDK chosen per Minecraft version (Windows; Docker uses the Temurin image)
 - [ ] `build-server` checks each datapack's `pack_format` against the Minecraft version and names the ones that would stop the server from starting
 
 ## Phase 3: Discord commands
@@ -37,6 +42,7 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 
 ## Phase 4: Tailnet onboarding (friends onboarded after this phase)
 - [ ] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
+- [ ] `install.ps1` (Windows), plus a release pipeline for prebuilt `mc-host` binaries
 - [ ] `/tailnet revoke`
 - [ ] Test on a clean Windows machine, then invite friends
 
@@ -45,6 +51,7 @@ Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
 - [ ] `/watch channel`, and an announcement with a link to the changelog
 
 ## Later
+- [ ] Datapacks and resource packs in R2, and the resource pack served by hash (once Vanilla Tweaks ships 26.3 packs)
 - [ ] Changelog summaries from a local language model
 - [ ] `/mod add` by Modrinth slug
 - [ ] Two-way chat bridge between Discord and Minecraft
