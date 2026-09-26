@@ -4,7 +4,8 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "test": "bun test && bun run --cwd apps/worker test",
-    "typecheck": "tsc -p . && tsc -p apps/worker"
+    "typecheck": "tsc -p . && tsc -p apps/worker",
+    "test:integration": "INTEGRATION=1 bun test apps/agent/test/integration.test.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

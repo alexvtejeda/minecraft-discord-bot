@@ -13,7 +13,14 @@ export async function downloadTo(fetch: Fetch, url: string, dest: string): Promi
   if (!res.ok || !res.body) throw new OfflineError(`Couldn't download the world (HTTP ${res.status}). Try again in a few minutes.`);
   await mkdir(dirname(dest), { recursive: true });
   const sink = Bun.file(dest).writer();
-  for await (const chunk of res.body) sink.write(chunk);
+  // A read loop rather than `for await`: Bun 1.3's async iterator over a fetch body can throw
+  // "undefined is not a function" (seen against wrangler dev's gzip responses).
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    sink.write(value);
+  }
   await sink.end();
 }
 
