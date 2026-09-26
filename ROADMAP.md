@@ -37,10 +37,11 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md](do
 - [x] 2a leftovers: autosave rev bump, fresh `--replace` world with Chunky
 
 ## Phase 3: Discord commands
+Design: [docs/superpowers/specs/2026-09-26-phase-3-discord-design.md](docs/superpowers/specs/2026-09-26-phase-3-discord-design.md)
 - [ ] Interactions endpoint and command registration
-- [ ] `/help`, `/status`, `/join`, `/modpack`, `/world download`
-- [ ] Maintainer commands: `/mod …`, `/world new|rollback|archive`, `/host release`
-- [ ] Announcements
+- [ ] `/help`, `/status`, `/join`, `/modpack`, `/world download`, `/mod list`
+- [ ] Maintainer commands: `/world new|rollback|archive|repin`, `/host release`, with Confirm buttons
+- [ ] Announcements when a server starts and stops
 
 ## Phase 4: Tailnet onboarding (friends onboarded after this phase)
 - [ ] `/setup`: enrollment code plus a tagged auth key, as a one-line installer
