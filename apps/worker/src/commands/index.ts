@@ -6,6 +6,7 @@ import { modpack } from "./modpack";
 import { status } from "./status";
 import { worldDownload } from "./world-download";
 import { newAction, worldNew } from "./world-new";
+import { rollbackAction, worldRollback } from "./world-rollback";
 
 export const REGISTRY: Registry = {
   groups: {
@@ -13,6 +14,6 @@ export const REGISTRY: Registry = {
     mod: "Mods in the active world",
     host: "The hosting session",
   },
-  commands: [help, status, join, modpack, modList, worldDownload, worldNew],
-  actions: [newAction],
+  commands: [help, status, join, modpack, modList, worldDownload, worldNew, worldRollback],
+  actions: [newAction, rollbackAction],
 };

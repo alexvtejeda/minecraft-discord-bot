@@ -1,7 +1,7 @@
 import type { UploadTarget } from "@mc/protocol";
 import type { Env } from "./env";
 import { ApiError } from "./errors";
-import { leaseLostError, readLease } from "./lease";
+import { CLEAR_LEASE, isHeld, leaseInfo, leaseLostError, readLease } from "./lease";
 import { storageFor } from "./storage";
 import { latestSnapshot, pruneWorld } from "./worlds";
 
@@ -97,4 +97,44 @@ export async function commitSnapshot(
   } catch (err) {
     console.error("pruning snapshots failed", err);
   }
+}
+
+/**
+ * Add rev latest+1 pointing at an older rev's object, so nothing is lost and a rollback can be
+ * undone. Refused while someone is hosting. An expired session is cleared so it can't heartbeat
+ * back to life and commit on top of the rollback.
+ */
+export async function rollbackTo(
+  env: Pick<Env, "DB" | "BUCKET">,
+  o: { worldId: string; rev: number; by: string; now: number },
+): Promise<number> {
+  const db = env.DB;
+  const [inserted] = await db.batch<{ rev: number }>([
+    db
+      .prepare(
+        `INSERT INTO snapshots (world_id, rev, r2_key, size, sha256, uploaded_by, created_at)
+         SELECT world_id, (SELECT MAX(rev) FROM snapshots WHERE world_id = ?1) + 1, r2_key, size, sha256, ?3, ?4
+         FROM snapshots
+         WHERE world_id = ?1 AND rev = ?2
+           AND rev < (SELECT MAX(rev) FROM snapshots WHERE world_id = ?1)
+           AND NOT EXISTS (SELECT 1 FROM lease WHERE id = 1 AND holder_id IS NOT NULL AND expires_at >= ?4)
+         RETURNING rev`,
+      )
+      .bind(o.worldId, o.rev, `rollback:${o.by}`, o.now),
+    db.prepare(`${CLEAR_LEASE} WHERE id = 1 AND holder_id IS NOT NULL AND expires_at < ?`).bind(o.now),
+  ]);
+  const newRev = inserted!.results[0]?.rev;
+  if (newRev === undefined) {
+    const lease = await readLease(db);
+    if (isHeld(lease, o.now)) throw new ApiError("lease_held", "Someone is hosting right now. Roll back once they stop.", leaseInfo(lease));
+    const latest = await latestSnapshot(db, o.worldId);
+    if (latest?.rev === o.rev) throw new ApiError("conflict", `Rev ${o.rev} is already the latest.`);
+    throw new ApiError("not_found", `Rev ${o.rev} isn't kept any more. Only the last ${KEEP_SNAPSHOTS} saves are kept.`);
+  }
+  try {
+    await pruneWorld(env, o.worldId, KEEP_SNAPSHOTS);
+  } catch (err) {
+    console.error("pruning snapshots failed", err);
+  }
+  return newRev;
 }

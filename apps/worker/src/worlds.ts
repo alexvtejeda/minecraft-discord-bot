@@ -139,6 +139,7 @@ export async function pruneWorld(env: Pick<Env, "DB" | "BUCKET">, worldId: strin
   if (dropped.length) {
     await env.DB.prepare("DELETE FROM snapshots WHERE world_id = ? AND rev < ?").bind(worldId, kept.at(-1)!.rev).run();
   }
-  const doomed = [...new Set([...dropped.map((r) => r.r2_key), ...orphans])];
+  // A rollback row reuses an older row's object, so never delete a key a kept row still points at.
+  const doomed = [...new Set([...dropped.map((r) => r.r2_key), ...orphans])].filter((k) => !keptKeys.has(k));
   if (doomed.length) await env.BUCKET.delete(doomed);
 }
