@@ -1,0 +1,13 @@
+{
+  "name": "@mc/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "mc-host": "src/cli.ts" },
+  "scripts": {
+    "build": "bun build src/cli.ts --compile --outfile dist/mc-host"
+  },
+  "dependencies": {
+    "@mc/profile": "workspace:*"
+  }
+}
