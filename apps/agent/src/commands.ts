@@ -26,7 +26,7 @@ import type { Command } from "./cli";
 import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
-import { requireJava } from "./run/java";
+import { requireJava } from "./java/version";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
 

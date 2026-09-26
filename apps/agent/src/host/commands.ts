@@ -4,7 +4,7 @@ import type { Deps } from "../commands";
 import { dataDir as defaultDataDir } from "../paths";
 import { crashSummary } from "../run/crash";
 import { ensureEula } from "../run/eula";
-import { requireJava } from "../run/java";
+import { requireJava } from "../java/version";
 import { buildServer, readMarker } from "../server/build";
 import { tailnetAddress } from "./address";
 import { createAgentApi, hhmm } from "./api";

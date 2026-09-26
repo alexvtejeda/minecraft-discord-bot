@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { readConfig } from "../src/run/config";
 import { crashSummary, suspectMod } from "../src/run/crash";
 import { ensureEula } from "../src/run/eula";
-import { parseJavaMajor, requireJava } from "../src/run/java";
+import { parseJavaMajor, requireJava } from "../src/java/version";
 import { whileChildRuns } from "../src/run/server";
 
 test("parseJavaMajor handles modern and legacy version strings", () => {
