@@ -15,6 +15,11 @@
 		{
 			"binding": "BUCKET",
 			"bucket_name": "mc-bot"
+		},
+		{
+			"bucket_name": "mc-bot",
+			"binding": "mc_bot",
+			"remote": true
 		}
 	],
 	"vars": {
