@@ -1,16 +1,21 @@
 import {
   ClaimRequestSchema,
+  CommitRequestSchema,
   SessionRequestSchema,
+  UploadUrlRequestSchema,
   type ClaimResponse,
+  type CommitResponse,
   type HeartbeatResponse,
   type Manifest,
   type Ok,
+  type UploadTarget,
 } from "@mc/protocol";
 import { Hono } from "hono";
 import { agentAuth } from "../auth";
 import type { AppEnv } from "../env";
 import { readBody } from "../errors";
-import { claimLease, heartbeatLease, isHeld, leaseInfo, readLease, releaseLease } from "../lease";
+import { claimLease, heartbeatLease, isHeld, leaseInfo, readLease, releaseLease, requireSession } from "../lease";
+import { beginUpload, commitSnapshot } from "../snapshots";
 import { storageFor } from "../storage";
 import { latestSnapshot, requireActiveWorld } from "../worlds";
 
@@ -52,5 +57,20 @@ agent.post("/lease/release", async (c) => {
   const { sessionId } = await readBody(c, SessionRequestSchema);
   await releaseLease(c.env.DB, sessionId);
   const body: Ok = { ok: true };
+  return c.json(body);
+});
+
+agent.post("/snapshot/upload-url", async (c) => {
+  const req = await readBody(c, UploadUrlRequestSchema);
+  const lease = await requireSession(c.env.DB, req.sessionId);
+  const body: UploadTarget = await beginUpload(c.env, c.req.url, { worldId: lease.world_id, baseRev: req.baseRev, sha256: req.sha256 });
+  return c.json(body);
+});
+
+agent.post("/snapshot/commit", async (c) => {
+  const req = await readBody(c, CommitRequestSchema);
+  const lease = await requireSession(c.env.DB, req.sessionId);
+  await commitSnapshot(c.env, { ...req, worldId: lease.world_id, uploadedBy: c.var.userId, now: Date.now() });
+  const body: CommitResponse = { rev: req.rev };
   return c.json(body);
 });
