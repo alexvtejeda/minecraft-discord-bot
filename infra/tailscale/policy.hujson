@@ -7,19 +7,28 @@
 	},
 
 	"grants": [
-		// Any player PC may be the host, so players can reach each other on the game port only.
+		// Any player PC may be the host, so players (and admin devices) can reach each other
+		// on the game port and Simple Voice Chat's UDP port only.
 		{
 			"src": ["tag:mc-player", "autogroup:member"],
 			"dst": ["tag:mc-player"],
-			"ip":  ["tcp:25565"],
+			"ip":  ["tcp:25565", "udp:24454"],
 		},
 	],
 
 	"tests": [
 		{
 			"src":    "tag:mc-player",
+			"proto":  "tcp",
 			"accept": ["tag:mc-player:25565"],
 			"deny":   ["tag:mc-player:22", "tag:mc-player:3389", "tag:mc-player:445"],
+		},
+		{
+			// Simple Voice Chat
+			"src":    "tag:mc-player",
+			"proto":  "udp",
+			"accept": ["tag:mc-player:24454"],
+			"deny":   ["tag:mc-player:53"],
 		},
 	],
 }

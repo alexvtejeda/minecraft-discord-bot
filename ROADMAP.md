@@ -14,9 +14,10 @@ Friends get onboarded after Phase 4 is done. Phase 5 can be added while they're 
 
 ## Phase 1: Server config
 Design: [docs/superpowers/specs/2026-09-25-phase-1-profiles-design.md](docs/superpowers/specs/2026-09-25-phase-1-profiles-design.md)
-- [ ] Profile schema and lockfile (`packages/profile`), resolved from Modrinth with a `waiting` list
-- [ ] `vanilla-plus` and `adventure` profiles for 26.3 (`profiles/`)
-- [ ] Server builder and `.mrpack` builder for Prism Launcher
+Local test guide: [docs/setup/phase-1.md](docs/setup/phase-1.md)
+- [x] Profile schema and lockfile (`packages/profile`), resolved from Modrinth with a `waiting` list
+- [x] `vanilla-plus` and `adventure` profiles for 26.3 (`profiles/`)
+- [x] Server builder and `.mrpack` builder for Prism Launcher
 - [ ] Voice chat port (UDP 24454) in the tailnet policy
 - [ ] Run `adventure` locally on Fedora and join it through Prism
 
