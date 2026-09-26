@@ -78,17 +78,16 @@ cat > "$BIN/mc-host" <<'SHIM'
 # Installed by minecraft-discord-bot/scripts/install.sh
 set -euo pipefail
 APP="${XDG_DATA_HOME:-$HOME/.local/share}/mc-host"
-compose() { docker compose --project-directory "$APP" -f "$APP/compose.yml" --env-file "$APP/.env" "$@"; }
 case "${1:-}" in
   start)
-    exec compose run --rm -it --name mc-host-agent agent start ;;
+    exec docker compose --project-directory "$APP" -f "$APP/compose.yml" --env-file "$APP/.env" run --rm -it --name mc-host-agent agent start ;;
   stop)
     if docker ps --format '{{.Names}}' | grep -qx mc-host-agent; then
       exec docker kill -s SIGINT mc-host-agent
     fi
     echo "Nobody is hosting from this PC." ;;
   status)
-    exec compose run --rm -T agent status ;;
+    exec docker compose --project-directory "$APP" -f "$APP/compose.yml" --env-file "$APP/.env" run --rm -T agent status ;;
   *)
     exec "$APP/mc-host-native" "$@" ;;
 esac
