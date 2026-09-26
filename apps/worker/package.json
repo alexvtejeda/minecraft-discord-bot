@@ -7,7 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "register": "bun scripts/register-commands.ts"
   },
   "dependencies": {
     "@mc/profile": "workspace:*",

@@ -38,6 +38,7 @@ Design: [docs/superpowers/specs/2026-09-26-phase-2b-java-and-packs-design.md](do
 
 ## Phase 3: Discord commands
 Design: [docs/superpowers/specs/2026-09-26-phase-3-discord-design.md](docs/superpowers/specs/2026-09-26-phase-3-discord-design.md)
+Setup guide: [docs/setup/phase-3.md](docs/setup/phase-3.md)
 - [ ] Interactions endpoint and command registration
 - [ ] `/help`, `/status`, `/join`, `/modpack`, `/world download`, `/mod list`
 - [ ] Maintainer commands: `/world new|rollback|archive|repin`, `/host release`, with Confirm buttons
