@@ -7,6 +7,12 @@ import type { Env } from "../env";
 
 export type OptionValue = string | number | boolean;
 
+export interface Attachment {
+  url: string;
+  filename: string;
+  size: number;
+}
+
 /** What the router knows about the HTTP request, before looking at who sent it. */
 export interface RequestMeta {
   env: Env;
@@ -23,10 +29,14 @@ export interface Invocation extends RequestMeta {
   userName: string;
   isMaintainer: boolean;
   registry: Registry;
+  /** For editing a deferred reply. */
+  interactionToken: string;
 }
 
 export interface CommandContext extends Invocation {
   options: Record<string, OptionValue>;
+  /** Attachment options, by the attachment ID that is the option's value. */
+  attachments: Record<string, Attachment>;
 }
 
 export interface Command {

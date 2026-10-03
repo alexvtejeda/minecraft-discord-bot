@@ -1,7 +1,7 @@
 import { InteractionResponseType, InteractionType, type APIInteraction, type APIInteractionResponse } from "discord-api-types/v10";
 import { ApiError } from "../errors";
 import { CANCEL_ID, parseConfirmId } from "./confirm";
-import type { Invocation, OptionValue, Registry, RequestMeta } from "./registry";
+import type { Attachment, Invocation, OptionValue, Registry, RequestMeta } from "./registry";
 import { choices, NEEDS_ROLE, OOPS, reply, update } from "./respond";
 
 interface RawOption {
@@ -41,21 +41,23 @@ export async function handleInteraction(i: APIInteraction, req: RequestMeta, reg
     userName: i.member?.user.username ?? i.user?.username ?? "",
     isMaintainer: !!req.env.MAINTAINER_ROLE_ID && roles.includes(req.env.MAINTAINER_ROLE_ID),
     registry,
+    interactionToken: (i as { token?: string }).token ?? "",
   };
   const isButton = i.type === InteractionType.MessageComponent;
   const isAutocomplete = i.type === InteractionType.ApplicationCommandAutocomplete;
   try {
     if (i.type === InteractionType.ApplicationCommand || isAutocomplete) {
       const { path, options, focused } = flatten(i.data as unknown as { name: string; options?: RawOption[] });
+      const attachments = (i.data as { resolved?: { attachments?: Record<string, Attachment> } }).resolved?.attachments ?? {};
       const cmd = registry.commands.find((c) => c.path === path);
       const allowed = !!cmd && (!cmd.maintainerOnly || inv.isMaintainer);
       if (isAutocomplete) {
         if (!allowed || !cmd.autocomplete || !focused) return choices([]);
-        return choices(await cmd.autocomplete({ ...inv, options }, focused));
+        return choices(await cmd.autocomplete({ ...inv, options, attachments }, focused));
       }
       if (!cmd) return reply("I don't know that command. It may have been removed, so try `/help`.");
       if (!allowed) return reply(NEEDS_ROLE);
-      return await cmd.run({ ...inv, options });
+      return await cmd.run({ ...inv, options, attachments });
     }
     if (isButton) {
       const id = i.data.custom_id;

@@ -38,3 +38,8 @@ export function update(content: string): APIInteractionResponse {
 export function choices(list: APIApplicationCommandOptionChoice[]): APIInteractionResponse {
   return { type: InteractionResponseType.ApplicationCommandAutocompleteResult, data: { choices: list.slice(0, 25) } };
 }
+
+/** "Thinking…" for work that may outlast Discord's 3-second limit. Finish it with editOriginal. */
+export function deferred(): APIInteractionResponse {
+  return { type: InteractionResponseType.DeferredChannelMessageWithSource, data: { flags: MessageFlags.Ephemeral } };
+}
