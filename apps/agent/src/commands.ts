@@ -8,6 +8,7 @@ import {
   createFabricMeta,
   createModrinthClient,
   createMojangMeta,
+  isJarEntry,
   isVanillaCompatible,
   parseLock,
   parseProfile,
@@ -17,13 +18,16 @@ import {
   USER_AGENT,
   UserError,
   type Fetch,
+  type JarLookup,
   type Lockfile,
   type Profile,
   type ResolveDeps,
 } from "@mc/profile";
 import { runAdmin } from "./admin";
 import type { Command } from "./cli";
+import { createAdminApi } from "./host/api";
 import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
+import { loadAdminConfig } from "./host/config";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
 import { javaFor } from "./java/runtime";
@@ -49,7 +53,7 @@ export interface Deps {
   dataDir?: string;
 }
 
-function clientsFor(deps: Deps): ResolveDeps {
+export function clientsFor(deps: Deps): ResolveDeps {
   if (deps.clients) return deps.clients;
   const http = { fetch: deps.fetch, userAgent: USER_AGENT };
   return { modrinth: createModrinthClient(http), fabric: createFabricMeta(http), mojang: createMojangMeta(http) };
@@ -113,7 +117,8 @@ async function cmdResolve(cmd: Extract<Command, { kind: "resolve" }>, deps: Deps
     deps.log(ready.length ? `Moved ${[...readySlugs].join(", ")} from waiting into mods.` : "No waiting mods are ready yet.");
   }
 
-  const { lock, warnings, waiting } = await resolveProfile(profile, clients);
+  const jars = clients.jars ?? (profile.mods.some(isJarEntry) ? await adminJars(deps) : undefined);
+  const { lock, warnings, waiting } = await resolveProfile(profile, { ...clients, jars });
   await writeFile(join(cmd.profilesDir, `${cmd.name}.lock.json`), serializeLock(lock));
   const auto = lock.files.filter((f) => f.auto).length;
   deps.log(
@@ -201,6 +206,13 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
     case "admin-token-mint":
     case "admin-lease-release":
     case "admin-status":
+    case "admin-jar-add":
       return runAdmin(cmd, deps);
   }
+}
+
+/** Uploaded jars are looked up on the Worker with the admin secret. */
+async function adminJars(deps: Deps): Promise<JarLookup> {
+  const api = createAdminApi({ ...(await loadAdminConfig(deps.env ?? process.env, deps.configDir)), fetch: deps.fetch });
+  return { lookup: (sha512) => api.getJar(sha512) };
 }

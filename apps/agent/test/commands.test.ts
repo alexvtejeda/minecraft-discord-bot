@@ -124,3 +124,28 @@ test("run refuses a folder whose last build did not finish", async () => {
   await Bun.write(join(srv, ".mc-host.json"), JSON.stringify({ profile: "test", minecraft: "26.3", javaMajor: 8, memory: { min: "1G", max: "1G" }, complete: false }));
   await expect(runCommand({ kind: "run", dir: srv }, deps)).rejects.toThrow(/last build of "test" in .* didn't finish/);
 });
+
+test("resolve looks uploaded jars up through the admin API", async () => {
+  const SHA = "b".repeat(128);
+  writeProfile({ mods: [{ jar: "dragonbond", filename: "d.jar", sha512: SHA, side: "both" }], waiting: [] });
+  const seen: string[] = [];
+  const fetch: Deps["fetch"] = async (url) => {
+    seen.push(url);
+    return url === `https://w.test/admin/jars/${SHA}`
+      ? Response.json({ sha512: SHA, sha1: "1".repeat(40), size: 5, filename: "d.jar", modId: "dragonbond", version: "1.1.1", minecraftRange: "=26.3", javaRange: null, depends: [] })
+      : Response.json({ error: "not_found", message: "nope" }, { status: 404 });
+  };
+  await runCommand(
+    { kind: "resolve", name: "test", addReady: false, profilesDir: dir },
+    { ...deps, fetch, env: { MC_WORKER_URL: "https://w.test", MC_ADMIN_SECRET: "s" } },
+  );
+  const lock = parseLock(readFileSync(join(dir, "test.lock.json"), "utf8"), "lock");
+  expect(lock.files).toHaveLength(1);
+  expect(lock.files[0]).toMatchObject({ slug: "dragonbond", source: "jar", url: `jars/${SHA}`, versionNumber: "1.1.1" });
+  expect(seen).toEqual([`https://w.test/admin/jars/${SHA}`]);
+});
+
+test("resolve without admin config names what's missing", async () => {
+  writeProfile({ mods: [{ jar: "dragonbond", filename: "d.jar", sha512: "b".repeat(128), side: "both" }], waiting: [] });
+  await expect(runCommand({ kind: "resolve", name: "test", addReady: false, profilesDir: dir }, { ...deps, env: {} })).rejects.toThrow(/MC_ADMIN_SECRET/);
+});

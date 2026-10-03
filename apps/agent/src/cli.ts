@@ -17,6 +17,7 @@ export type Command =
   | { kind: "admin-token-mint"; discordId: string; name: string }
   | { kind: "admin-lease-release" }
   | { kind: "admin-status" }
+  | { kind: "admin-jar-add"; profile: string; file: string; side: string; name?: string; profilesDir: string }
   | { kind: "version" }
   | { kind: "help" };
 
@@ -54,6 +55,10 @@ Maintainers (need MC_WORKER_URL and MC_ADMIN_SECRET)
       Make a new active world from profiles/<profile>.json and its lockfile.
       --replace      archive the current world first
       --import       upload an existing server folder as the world's first snapshot
+  admin jar add <profile> <file.jar> [--side both|server] [--name <name>]
+      Check a mod jar against <profile>, upload it, and print the line for its "mods".
+      --side         "both" (default: the server and every player) or "server"
+      --name         its name in the profile (default: the mod's ID)
   admin token mint <discord-id> <name>
       Print a new hosting token for someone. It's shown only once.
   admin lease release
@@ -80,6 +85,7 @@ export function parseCommand(argv: string[]): Command {
         keep: { type: "boolean", default: false },
         profiles: { type: "string", default: "profiles" },
         name: { type: "string" },
+        side: { type: "string", default: "both" },
         replace: { type: "boolean", default: false },
         import: { type: "string" },
         version: { type: "boolean", default: false },
@@ -146,6 +152,9 @@ export function parseCommand(argv: string[]): Command {
       }
       if (sub === "lease" && a === "release") return { kind: "admin-lease-release" };
       if (sub === "status") return { kind: "admin-status" };
+      if (sub === "jar" && a === "add") {
+        return { kind: "admin-jar-add", profile: need(b, "<profile>"), file: need(c, "<file.jar>"), side: values.side ?? "both", name: values.name, profilesDir };
+      }
       throw unknown(["admin", sub, a]);
     default:
       throw unknown([group]);

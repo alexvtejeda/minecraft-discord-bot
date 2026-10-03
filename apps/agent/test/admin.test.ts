@@ -3,6 +3,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseProfile, profileHash, serializeLock, type Fetch } from "@mc/profile";
+import { strToU8, zipSync } from "fflate";
+import { fakeFabric, fakeMojang, FakeModrinth } from "../../../packages/profile/test/fakes";
 import { runAdmin } from "../src/admin";
 import type { Deps } from "../src/commands";
 
@@ -56,6 +58,10 @@ function worker() {
         lease: null,
         users: [{ discordId: "1", name: "Alex", revoked: false }, { discordId: "2", name: "Sam", revoked: true }],
       });
+    }
+    if (url.includes("/admin/jars/") && method === "PUT") {
+      const sha512 = url.split("/admin/jars/")[1]!.split("?")[0]!;
+      return json({ created: true, jar: { sha512, sha1: "1".repeat(40), size: 10, filename: "a b.jar", modId: "dragonbond", version: "1.1.1", minecraftRange: "=26.3", javaRange: null, depends: ["citadel"] } }, 201);
     }
     return json({ error: "not_found", message: "nope" }, 404);
   };
@@ -127,4 +133,42 @@ test("token mint, lease release and status print what happened", async () => {
 
 test("admin commands without MC_ADMIN_SECRET explain what's missing", async () => {
   await expect(runAdmin({ kind: "admin-status" }, deps(worker().fetch, [], {}))).rejects.toThrow("MC_ADMIN_SECRET");
+});
+
+const jarBytes = (mc = "=26.3") => zipSync({ "fabric.mod.json": strToU8(JSON.stringify({ schemaVersion: 1, id: "dragonbond", version: "1.1.1", depends: { minecraft: mc, citadel: "*" } })) });
+
+test("admin jar add checks, uploads and prints the profile line", async () => {
+  const dir = await profilesDir();
+  const file = join(dir, "a b.jar");
+  writeFileSync(file, jarBytes());
+  const { fetch, seen } = worker();
+  const logs: string[] = [];
+  const d = { ...deps(fetch, logs), clients: { modrinth: new FakeModrinth(), fabric: fakeFabric, mojang: fakeMojang } };
+  await runAdmin({ kind: "admin-jar-add", profile: "test", file, side: "both", profilesDir: dir }, d);
+  const put = seen.find((s) => s.method === "PUT")!;
+  expect(put.url).toMatch(/^https:\/\/w\.test\/admin\/jars\/[0-9a-f]{128}\?filename=a\+b\.jar&minecraft=26\.3&java=25$/);
+  expect(logs[0]).toBe("Uploaded a b.jar (dragonbond 1.1.1).");
+  expect(logs[1]).toBe('Add this to "mods" in test.json, then run "mc-host profile resolve test":');
+  expect(logs[2]).toMatch(/^ {2}\{"jar":"dragonbond","filename":"a b.jar","sha512":"[0-9a-f]{128}","side":"both"\}$/);
+  expect(logs[3]).toContain('Needs "citadel"');
+});
+
+test("admin jar add stops before uploading a jar for another version", async () => {
+  const dir = await profilesDir();
+  const file = join(dir, "old.jar");
+  writeFileSync(file, jarBytes("=26.1.2"));
+  const { fetch, seen } = worker();
+  const d = { ...deps(fetch, []), clients: { modrinth: new FakeModrinth(), fabric: fakeFabric, mojang: fakeMojang } };
+  await expect(runAdmin({ kind: "admin-jar-add", profile: "test", file, side: "both", profilesDir: dir }, d)).rejects.toThrow(
+    "old.jar is built for Minecraft =26.1.2, but the profile is on 26.3.",
+  );
+  expect(seen.some((s) => s.method === "PUT")).toBe(false);
+});
+
+test("admin jar add rejects a bad --side", async () => {
+  const dir = await profilesDir();
+  const d = deps(worker().fetch, []);
+  await expect(runAdmin({ kind: "admin-jar-add", profile: "test", file: "x.jar", side: "client", profilesDir: dir }, d)).rejects.toThrow(
+    '--side must be "server" or "both", not "client".',
+  );
 });

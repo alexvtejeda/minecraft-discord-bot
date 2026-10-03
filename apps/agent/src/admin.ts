@@ -1,16 +1,16 @@
 import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
-import { join } from "node:path";
-import { UserError } from "@mc/profile";
+import { readFile, rm } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { dependencyHints, inspectJar, jarName, jarProfileLine, UserError } from "@mc/profile";
 import type { Command } from "./cli";
-import { loadLock, loadProfile, type Deps } from "./commands";
+import { clientsFor, loadLock, loadProfile, type Deps } from "./commands";
 import { createAdminApi, hhmm, type AdminApi } from "./host/api";
 import { loadAdminConfig } from "./host/config";
 import { mb } from "./host/deps";
 import { zipSnapshot } from "./host/snapshot";
 import { uploadFile } from "./host/transfer";
 
-type AdminCommand = Extract<Command, { kind: "admin-world-create" | "admin-token-mint" | "admin-lease-release" | "admin-status" }>;
+type AdminCommand = Extract<Command, { kind: "admin-world-create" | "admin-token-mint" | "admin-lease-release" | "admin-status" | "admin-jar-add" }>;
 
 function today(ms: number): string {
   const d = new Date(ms);
@@ -50,12 +50,32 @@ async function createWorld(cmd: Extract<AdminCommand, { kind: "admin-world-creat
   }
 }
 
+async function addJar(cmd: Extract<AdminCommand, { kind: "admin-jar-add" }>, api: AdminApi, deps: Deps): Promise<void> {
+  if (cmd.side !== "server" && cmd.side !== "both") throw new UserError(`--side must be "server" or "both", not "${cmd.side}".`);
+  const side = cmd.side;
+  const { profile } = await loadProfile(cmd.profilesDir, cmd.profile);
+  if (!existsSync(cmd.file)) throw new UserError(`${cmd.file} doesn't exist. Check the path and try again.`);
+  const bytes = new Uint8Array(await readFile(cmd.file));
+  const filename = basename(cmd.file);
+  const target = { minecraft: profile.minecraft, javaMajor: await clientsFor(deps).mojang.javaMajor(profile.minecraft) };
+  const report = await inspectJar(bytes, filename, target);
+  if (report.problems.length) throw new UserError(report.problems.join("\n"));
+  const { jar, created } = await api.putJar({ bytes, sha512: report.sha512, filename, ...target });
+  const what = [jar.modId, jar.version].filter(Boolean).join(" ") || "unknown mod";
+  deps.log(created ? `Uploaded ${filename} (${what}).` : `${filename} was already uploaded (${what}).`);
+  deps.log(`Add this to "mods" in ${profile.name}.json, then run "mc-host profile resolve ${profile.name}":`);
+  deps.log(`  ${jarProfileLine({ name: cmd.name ?? jarName(jar.modId, filename), filename, sha512: jar.sha512, side })}`);
+  for (const h of dependencyHints(jar.depends)) deps.log(h);
+}
+
 export async function runAdmin(cmd: AdminCommand, deps: Deps): Promise<void> {
   const cfg = await loadAdminConfig(deps.env ?? process.env, deps.configDir);
   const api = createAdminApi({ ...cfg, fetch: deps.fetch });
   switch (cmd.kind) {
     case "admin-world-create":
       return createWorld(cmd, api, deps);
+    case "admin-jar-add":
+      return addJar(cmd, api, deps);
     case "admin-token-mint": {
       const token = await api.mintToken({ discordId: cmd.discordId, name: cmd.name });
       deps.log(`Hosting token for ${cmd.name}: ${token}`);

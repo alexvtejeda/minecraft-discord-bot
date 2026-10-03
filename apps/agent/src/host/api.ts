@@ -1,4 +1,4 @@
-import { UserError, type Fetch } from "@mc/profile";
+import { UserError, type Fetch, type JarInfo } from "@mc/profile";
 import {
   AGENT_VERSION_HEADER,
   AdminStatusSchema,
@@ -7,6 +7,8 @@ import {
   CreateWorldResponseSchema,
   ErrorBodySchema,
   HeartbeatResponseSchema,
+  JarInfoSchema,
+  JarUploadResponseSchema,
   ManifestSchema,
   MintTokenResponseSchema,
   OkSchema,
@@ -19,6 +21,7 @@ import {
   type CreateWorldResponse,
   type ImportCommitRequest,
   type ImportUrlRequest,
+  type JarUploadResponse,
   type LeaseInfo,
   type Manifest,
   type MintTokenRequest,
@@ -43,6 +46,8 @@ export class LeaseLostError extends UserError {}
 export class StaleRevError extends UserError {}
 /** The Worker couldn't be reached, or answered with something that isn't our API. */
 export class OfflineError extends UserError {}
+/** The Worker has no such thing. */
+export class NotFoundError extends UserError {}
 
 export function hhmm(ms: number): string {
   const d = new Date(ms);
@@ -55,7 +60,8 @@ interface Client {
   secret: string;
 }
 
-async function request<T>(c: Client, method: "GET" | "POST", path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
+async function request<T>(c: Client, method: "GET" | "POST" | "PUT", path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
+  const raw = body instanceof Uint8Array;
   let res: Response;
   try {
     res = await c.fetch(`${c.base}${path}`, {
@@ -63,9 +69,9 @@ async function request<T>(c: Client, method: "GET" | "POST", path: string, schem
       headers: {
         Authorization: `Bearer ${c.secret}`,
         [AGENT_VERSION_HEADER]: VERSION,
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(body === undefined ? {} : { "Content-Type": raw ? "application/octet-stream" : "application/json" }),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : raw ? body : JSON.stringify(body),
     });
   } catch (err) {
     throw new OfflineError(
@@ -92,6 +98,7 @@ async function request<T>(c: Client, method: "GET" | "POST", path: string, schem
   }
   if (error === "lease_lost") throw new LeaseLostError(message);
   if (error === "stale_rev") throw new StaleRevError(message);
+  if (error === "not_found") throw new NotFoundError(message);
   throw new UserError(message);
 }
 
@@ -128,6 +135,9 @@ export interface AdminApi {
   mintToken(req: MintTokenRequest): Promise<string>;
   releaseLease(): Promise<LeaseInfo | null>;
   status(): Promise<AdminStatus>;
+  putJar(o: { bytes: Uint8Array; sha512: string; filename: string; minecraft: string; javaMajor: number }): Promise<JarUploadResponse>;
+  /** Null when no jar with that sha512 was uploaded. */
+  getJar(sha512: string): Promise<JarInfo | null>;
 }
 
 export function createAdminApi(o: { workerUrl: string; secret: string; fetch: Fetch }): AdminApi {
@@ -140,5 +150,21 @@ export function createAdminApi(o: { workerUrl: string; secret: string; fetch: Fe
     mintToken: async (req) => (await request(c, "POST", "/admin/tokens", MintTokenResponseSchema, req)).token,
     releaseLease: async () => (await request(c, "POST", "/admin/lease/release", ReleaseResponseSchema, {})).released,
     status: () => request(c, "GET", "/admin/status", AdminStatusSchema),
+    putJar: (o) =>
+      request(
+        c,
+        "PUT",
+        `/admin/jars/${o.sha512}?${new URLSearchParams({ filename: o.filename, minecraft: o.minecraft, java: String(o.javaMajor) })}`,
+        JarUploadResponseSchema,
+        o.bytes,
+      ),
+    getJar: async (sha512) => {
+      try {
+        return await request(c, "GET", `/admin/jars/${sha512}`, JarInfoSchema);
+      } catch (err) {
+        if (err instanceof NotFoundError) return null;
+        throw err;
+      }
+    },
   };
 }

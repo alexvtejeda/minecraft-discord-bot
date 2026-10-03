@@ -62,3 +62,11 @@ test("plain-English errors for admin and unknown commands", () => {
   expect(() => parseCommand(["admin", "world", "delete"])).toThrow(/Unknown command "admin world delete"/);
   expect(() => parseCommand(["host"])).toThrow(/Unknown command "host"/);
 });
+
+test("admin jar add", () => {
+  expect(parseCommand(["admin", "jar", "add", "cst", "mods/a b.jar"])).toEqual({
+    kind: "admin-jar-add", profile: "cst", file: "mods/a b.jar", side: "both", name: undefined, profilesDir: "profiles",
+  });
+  expect(parseCommand(["admin", "jar", "add", "cst", "x.jar", "--side", "server", "--name", "x"])).toMatchObject({ side: "server", name: "x" });
+  expect(() => parseCommand(["admin", "jar", "add", "cst"])).toThrow(/Missing <file.jar>/);
+});
