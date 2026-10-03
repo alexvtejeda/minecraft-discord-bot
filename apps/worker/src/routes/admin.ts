@@ -6,6 +6,8 @@ import {
   type AdminStatus,
   type CommitResponse,
   type CreateWorldResponse,
+  type JarInfoBody,
+  type JarUploadResponse,
   type MintTokenResponse,
   type ReleaseResponse,
   type UploadTarget,
@@ -14,6 +16,7 @@ import { Hono } from "hono";
 import { adminAuth } from "../auth";
 import type { AppEnv, Env } from "../env";
 import { ApiError, readBody } from "../errors";
+import { getJar, MAX_JAR_BYTES, storeJar } from "../jars";
 import { forceRelease, isHeld, leaseInfo, readLease } from "../lease";
 import { beginUpload, commitSnapshot } from "../snapshots";
 import { listUsers, mintToken } from "../users";
@@ -94,5 +97,28 @@ admin.post("/worlds/:id/import-commit", async (c) => {
   const world = await importableWorld(c.env, c.req.param("id"), now);
   await commitSnapshot(c.env, { ...req, worldId: world.id, rev: 1, uploadedBy: "admin", now, sessionId: null });
   const body: CommitResponse = { rev: 1 };
+  return c.json(body);
+});
+
+admin.put("/jars/:sha512", async (c) => {
+  const sha512 = c.req.param("sha512");
+  const filename = c.req.query("filename");
+  const minecraft = c.req.query("minecraft");
+  const javaMajor = Number(c.req.query("java"));
+  if (!/^[0-9a-f]{128}$/.test(sha512) || !filename || !minecraft || !Number.isInteger(javaMajor)) {
+    throw new ApiError("bad_request", "Send the jar as PUT /admin/jars/<sha512>?filename=…&minecraft=…&java=…");
+  }
+  if (Number(c.req.header("Content-Length") ?? 0) > MAX_JAR_BYTES) {
+    throw new ApiError("bad_request", `${filename} is over ${MAX_JAR_BYTES / 1024 / 1024} MB, which is bigger than any mod should be.`);
+  }
+  const bytes = new Uint8Array(await c.req.arrayBuffer());
+  const body: JarUploadResponse = await storeJar(c.env, { bytes, filename, target: { minecraft, javaMajor }, by: "admin", now: Date.now(), expectSha512: sha512 });
+  return c.json(body, body.created ? 201 : 200);
+});
+
+admin.get("/jars/:sha512", async (c) => {
+  const jar = await getJar(c.env.DB, c.req.param("sha512"));
+  if (!jar) throw new ApiError("not_found", "No jar with that sha512 has been uploaded.");
+  const body: JarInfoBody = jar;
   return c.json(body);
 });

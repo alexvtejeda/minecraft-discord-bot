@@ -1,4 +1,3 @@
-// packages/profile/test/jarcheck.test.ts
 import { describe, expect, test } from "bun:test";
 import { strToU8, zipSync } from "fflate";
 import { sha512Hex } from "../src/hash";

@@ -1,6 +1,7 @@
 import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
-import { profileHash, sha256Hex, type LockEntry, type Lockfile, type Side } from "@mc/profile";
+import { profileHash, sha256Hex, sha512Hex, type LockEntry, type Lockfile, type Side } from "@mc/profile";
 import { env } from "cloudflare:workers";
+import { strToU8, zipSync } from "fflate";
 import { makeProfile } from "../../../packages/profile/test/fakes";
 import type { Env } from "../src/env";
 import { app } from "../src/index";
@@ -130,4 +131,19 @@ export async function hostSince(userId: string, worldId: string, sinceMs: number
   const lease = await claimLease(env.DB, { userId, hostAddress, worldId, now: now - sinceMs });
   await env.DB.prepare("UPDATE lease SET expires_at = ? WHERE id = 1").bind(now + LEASE_MS).run();
   return lease;
+}
+
+/** A minimal Fabric mod jar. */
+export function fabricJar(o: Record<string, unknown> = {}): Uint8Array {
+  const meta = { schemaVersion: 1, id: "dragonbond", version: "1.1.1", depends: { minecraft: "=26.3", java: ">=25", citadel: "*" }, ...o };
+  return zipSync({ "fabric.mod.json": strToU8(JSON.stringify(meta)) });
+}
+
+export async function putJar(bytes: Uint8Array, q: { sha512?: string; filename?: string; minecraft?: string; java?: string } = {}, auth = `Bearer ${ADMIN_SECRET}`) {
+  const sha512 = q.sha512 ?? (await sha512Hex(bytes));
+  const params = new URLSearchParams({ filename: q.filename ?? "deeper end.jar", minecraft: q.minecraft ?? "26.3", java: q.java ?? "25" });
+  const ctx = createExecutionContext();
+  const res = await app.request(`/admin/jars/${sha512}?${params}`, { method: "PUT", headers: { Authorization: auth }, body: bytes }, env, ctx);
+  await waitOnExecutionContext(ctx);
+  return { status: res.status, body: (await res.json()) as any, sha512 };
 }

@@ -39,3 +39,13 @@ export const adminAuth = createMiddleware<AppEnv>(async (c, next) => {
   }
   await next();
 });
+
+/** A hosting token, or the admin secret: maintainers also build servers on their own PC. */
+export const agentOrAdminAuth = createMiddleware<AppEnv>(async (c, next) => {
+  const token = bearer(c.req.header("Authorization"));
+  if (token && c.env.ADMIN_SECRET && (await sameSecret(token, c.env.ADMIN_SECRET))) {
+    await next();
+    return;
+  }
+  return agentAuth(c, next);
+});

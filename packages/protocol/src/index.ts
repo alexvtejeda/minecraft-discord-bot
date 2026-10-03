@@ -140,3 +140,19 @@ export type EnrollResponse = z.infer<typeof EnrollResponseSchema>;
 /** nodeId is `Self.ID` from `tailscale status --json`, e.g. "nABC123CNTRL". */
 export const EnrollDeviceRequestSchema = z.object({ code: EnrollCode, nodeId: z.string().regex(/^[A-Za-z0-9]{1,64}$/) });
 export type EnrollDeviceRequest = z.infer<typeof EnrollDeviceRequestSchema>;
+
+export const Sha512Schema = z.string().regex(/^[0-9a-f]{128}$/, "must be a lowercase hex sha512");
+export const JarInfoSchema = z.object({
+  sha512: Sha512Schema,
+  sha1: z.string(),
+  size: Size,
+  filename: z.string(),
+  modId: z.string().nullable(),
+  version: z.string().nullable(),
+  minecraftRange: z.string().nullable(),
+  javaRange: z.string().nullable(),
+  depends: z.array(z.string()),
+});
+export type JarInfoBody = z.infer<typeof JarInfoSchema>;
+export const JarUploadResponseSchema = z.object({ jar: JarInfoSchema, created: z.boolean() });
+export type JarUploadResponse = z.infer<typeof JarUploadResponseSchema>;
