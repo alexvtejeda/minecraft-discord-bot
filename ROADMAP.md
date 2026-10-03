@@ -52,6 +52,15 @@ Setup guide: [docs/setup/phase-4.md](docs/setup/phase-4.md)
 - [x] `/tailnet revoke`
 - [x] Test on a clean Windows machine, then invite friends
 
+## Local jars
+Design: [docs/superpowers/specs/2026-10-03-local-jars-design.md](docs/superpowers/specs/2026-10-03-local-jars-design.md)
+Guide: [docs/setup/local-jars.md](docs/setup/local-jars.md)
+- [x] `inspectJar`, jar entries in profiles, resolved into the lockfile
+- [x] Worker: jars in R2, `GET /jars/<sha512>` for hosts, bundled into the `.mrpack`
+- [x] `mc-host admin jar add` and `/mod upload`
+- [x] `check-packs` boots mods-only profiles and names missing dependencies
+- [ ] Release v0.3.0, deploy, add the CurseForge jars to `cst`
+
 ## Phase 5: Proxy lobby (new feature, needs brainstorming)
 - [ ] A process that runs 24/7 with a fixed minecraft superflat world I can customize with [MoveMeNow](https://www.spigotmc.org/resources/movemenow.17/) plugin
 - [ ] Should be shown when there is no host running the server
