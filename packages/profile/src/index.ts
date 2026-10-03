@@ -10,6 +10,7 @@ export * from "./placement";
 export * from "./lockfile";
 export * from "./resolve";
 export * from "./mrpack";
+export * from "./jarcheck";
 
 export const USER_AGENT =
   "alexvtejeda/minecraft-discord-bot/0.1.0 (github.com/alexvtejeda/minecraft-discord-bot)";
