@@ -12,7 +12,7 @@ import {
   sideOf,
   type Placement,
 } from "./placement";
-import type { Profile, Side } from "./schema";
+import { isModrinthEntry, type Profile, type Side } from "./schema";
 import { pickVersion, primaryFile } from "./select";
 
 export interface ResolveDeps {
@@ -59,7 +59,7 @@ export async function resolveProfile(profile: Profile, deps: ResolveDeps): Promi
 
   const nodes = new Map<string, Node>();
   const incompatible: { from: string; projectId: string }[] = [];
-  const queue: Job[] = profile.mods.map((m) => ({
+  const queue: Job[] = profile.mods.filter(isModrinthEntry).map((m) => ({
     ref: m.modrinth,
     pin: m.version,
     placement: placementOf(m.side, m.clientOptional),
@@ -173,7 +173,7 @@ export async function checkAvailability(
   modrinth: ModrinthClient,
 ): Promise<{ slug: string; available: boolean; waiting: boolean }[]> {
   const entries = [
-    ...profile.mods.map((m) => ({ slug: m.modrinth, waiting: false })),
+    ...profile.mods.filter(isModrinthEntry).map((m) => ({ slug: m.modrinth, waiting: false })),
     ...profile.waiting.map((slug) => ({ slug, waiting: true })),
   ];
   const report = [];
