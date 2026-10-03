@@ -52,7 +52,7 @@ export async function buildServer(o: BuildServerOptions): Promise<{ mods: string
   const jars: [string, string][] = [];
   for (const [i, f] of wanted.entries()) {
     const s = sources[i]!;
-    jars.push([await fetchVerified(s.url, f.sha512, { ...dl, fetch: s.fetch }), f.filename]);
+    jars.push([await fetchVerified(s.url, f.sha512, { ...dl, fetch: s.fetch, label: s.label, hint: s.hint }), f.filename]);
   }
 
   const marker: ServerMarker = {

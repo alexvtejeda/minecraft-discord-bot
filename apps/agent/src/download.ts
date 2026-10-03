@@ -7,6 +7,10 @@ export interface DownloadOptions {
   fetch: Fetch;
   cacheDir: string;
   userAgent: string;
+  /** What to call the file in errors. Defaults to the URL's last segment. */
+  label?: string;
+  /** Replaces the "check your internet connection" advice when a download is refused. */
+  hint?: string;
 }
 
 /**
@@ -20,7 +24,7 @@ export async function fetchVerified(url: string, sha512: string | undefined, o: 
   if (existsSync(path) && (!sha512 || (await sha512Hex(await readFile(path))) === sha512)) return path;
 
   await mkdir(dirname(path), { recursive: true });
-  const name = decodeURIComponent(basename(new URL(url).pathname));
+  const name = o.label ?? decodeURIComponent(basename(new URL(url).pathname));
   for (let attempt = 1; attempt <= 2; attempt++) {
     let res: Response;
     try {
@@ -30,7 +34,7 @@ export async function fetchVerified(url: string, sha512: string | undefined, o: 
       throw new UserError(`Couldn't download ${name} (${(err as Error).message}). Check your internet connection and try again.`);
     }
     if (!res.ok) {
-      throw new UserError(`Couldn't download ${name} (HTTP ${res.status}). Check your internet connection and try again.`);
+      throw new UserError(`Couldn't download ${name} (HTTP ${res.status}). ${o.hint ?? "Check your internet connection and try again."}`);
     }
     const data = new Uint8Array(await res.arrayBuffer());
     if (sha512 && (await sha512Hex(data)) !== sha512) continue;
@@ -51,7 +55,11 @@ export interface JarSource {
 }
 
 /** Where a lock entry downloads from: Modrinth's CDN as-is, uploaded jars from the Worker with auth. */
-export function sourceFor(f: LockEntry, fetch: Fetch, jars: JarSource | undefined): { url: string; fetch: Fetch } {
+export function sourceFor(
+  f: LockEntry,
+  fetch: Fetch,
+  jars: JarSource | undefined,
+): { url: string; fetch: Fetch; label?: string; hint?: string } {
   if (!isUploadedJar(f)) return { url: f.url, fetch };
   if (!jars) {
     throw new UserError(`${f.filename} is an uploaded jar, so building needs the Worker: set MC_WORKER_URL with MC_TOKEN or MC_ADMIN_SECRET.`);
@@ -61,5 +69,10 @@ export function sourceFor(f: LockEntry, fetch: Fetch, jars: JarSource | undefine
     headers.set("Authorization", `Bearer ${jars.secret}`);
     return fetch(input, { ...init, headers });
   };
-  return { url: `${jars.workerUrl.replace(/\/+$/, "")}/${f.url}`, fetch: authed };
+  return {
+    url: `${jars.workerUrl.replace(/\/+$/, "")}/${f.url}`,
+    fetch: authed,
+    label: f.filename,
+    hint: "Check MC_WORKER_URL and your hosting token or MC_ADMIN_SECRET. If it's a 404, upload the jar again with mc-host admin jar add.",
+  };
 }

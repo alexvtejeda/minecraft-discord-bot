@@ -107,6 +107,12 @@ describe("inspectJar", () => {
     expect((await inspectJar(fabric(), "antiquetradingship-1.0.0 Fabric 26.3.jar", T)).problems).toEqual([]);
   });
 
+  // Final review: modules inside Fabric API aren't extra dependencies.
+  test("leaves Fabric API modules out of depends", async () => {
+    const deps = { "fabric-resource-loader-v0": "*", "fabric-api-base": "*", "fabric-language-kotlin": "*" };
+    expect((await inspectJar(fabric({ depends: deps }), "a.jar", T)).depends).toEqual(["fabric-language-kotlin"]);
+  });
+
   test("an unreadable range is not a problem", async () => {
     expect((await inspectJar(fabric({ depends: { minecraft: "@latest" } }), "a.jar", T)).problems).toEqual([]);
   });
@@ -123,6 +129,12 @@ describe("profile helpers", () => {
     expect(jarProfileLine({ name: "dragonbond", filename: "a b.jar", sha512: "f".repeat(128), side: "both" })).toBe(
       `{"jar":"dragonbond","filename":"a b.jar","sha512":"${"f".repeat(128)}","side":"both"}`,
     );
+  });
+
+  test("dependencyHints skips what the profile already has", () => {
+    expect(dependencyHints(["citadel", "collective"], ["collective"])).toEqual([
+      'Needs "citadel". Add it from Modrinth if it\'s there, or upload its jar too.',
+    ]);
   });
 
   test("dependencyHints names each dependency", () => {

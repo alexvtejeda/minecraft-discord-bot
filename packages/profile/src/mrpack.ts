@@ -77,7 +77,8 @@ export async function buildMrpack(
   };
   for (const e of extras) {
     if (e.path.startsWith("/") || e.path.split("/").includes("..")) throw new UserError(`Bad override path: ${e.path}`);
-    zip[`overrides/${e.path}`] = [e.data, { mtime: FIXED_MTIME }];
+    // Stored as-is: jars are zips already, and deflating them again costs the Worker CPU for nothing.
+    zip[`overrides/${e.path}`] = [e.data, { mtime: FIXED_MTIME, level: 0 }];
   }
   return zipSync(zip, { level: 6 });
 }

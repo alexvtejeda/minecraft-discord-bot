@@ -41,12 +41,13 @@ export const modUpload: Command = {
     const lock = parseLock(world.lockfile_json, `the ${world.name} lockfile`);
     const side: JarSide = c.options.side === "server" ? "server" : "both";
     const name = typeof c.options.name === "string" ? c.options.name : undefined;
-    c.exec.waitUntil(finish(c, att, { minecraft: lock.minecraft, javaMajor: lock.javaMajor }, side, name));
+    const have = lock.files.map((f) => f.slug);
+    c.exec.waitUntil(finish(c, att, { minecraft: lock.minecraft, javaMajor: lock.javaMajor }, side, name, have));
     return deferred();
   },
 };
 
-async function finish(c: CommandContext, att: Attachment, target: JarTarget, side: JarSide, name: string | undefined): Promise<void> {
+async function finish(c: CommandContext, att: Attachment, target: JarTarget, side: JarSide, name: string | undefined, have: string[]): Promise<void> {
   let message: string;
   try {
     const res = await fetch(att.url);
@@ -61,7 +62,7 @@ async function finish(c: CommandContext, att: Attachment, target: JarTarget, sid
       "```json",
       line,
       "```",
-      ...dependencyHints(jar.depends),
+      ...dependencyHints(jar.depends, have),
     ].join("\n");
   } catch (err) {
     if (!(err instanceof ApiError)) console.error("/mod upload failed", err);

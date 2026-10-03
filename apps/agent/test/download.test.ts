@@ -108,3 +108,12 @@ test("sourceFor leaves Modrinth entries alone and points jars at the Worker with
   expect(calls).toEqual([{ url: s.url, auth: "Bearer tok" }]);
   expect(() => sourceFor(jar, fetch, undefined)).toThrow(/a b\.jar is an uploaded jar/);
 });
+
+// Final review: an uploaded jar's failure names the jar and the likely cause.
+test("a failed download uses the label and hint it was given", async () => {
+  const fetch: Fetch = async () => new Response("no", { status: 401 });
+  const url = `https://w.test/jars/${"a".repeat(128)}`;
+  await expect(fetchVerified(url, "b".repeat(128), { fetch, cacheDir: dir, userAgent: "t", label: "deeper end.jar", hint: "Check the token." })).rejects.toThrow(
+    "Couldn't download deeper end.jar (HTTP 401). Check the token.",
+  );
+});

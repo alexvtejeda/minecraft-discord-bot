@@ -95,3 +95,10 @@ test("uploaded jars stay out of files[] and ride in overrides", async () => {
   expect(unzipSync(bytes)["overrides/mods/a b.jar"]).toEqual(new Uint8Array([1, 2]));
   expect(await buildMrpack(withJar, { name: "t" }, extras)).toEqual(bytes);
 });
+
+// Final review: jars are already compressed, so the Worker shouldn't spend CPU deflating them.
+test("extras are stored, not recompressed", async () => {
+  const data = new Uint8Array(8192).fill(7);
+  const bytes = await buildMrpack(lock, { name: "t" }, [{ path: "mods/x.jar", data }]);
+  expect(bytes.length).toBeGreaterThan(8192);
+});

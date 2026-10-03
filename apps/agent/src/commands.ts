@@ -160,7 +160,7 @@ async function cmdBuildMrpack(cmd: Extract<Command, { kind: "build-mrpack" }>, d
   const extras: ExtraFile[] = [];
   for (const f of lock.files.filter((f) => isUploadedJar(f) && f.side !== "server")) {
     const s = sourceFor(f, deps.fetch, source);
-    const path = await fetchVerified(s.url, f.sha512, { fetch: s.fetch, cacheDir: deps.cacheDir, userAgent: USER_AGENT });
+    const path = await fetchVerified(s.url, f.sha512, { fetch: s.fetch, cacheDir: deps.cacheDir, userAgent: USER_AGENT, label: s.label, hint: s.hint });
     extras.push({ path: `mods/${f.filename}`, data: new Uint8Array(await readFile(path)) });
   }
   const bytes = await buildMrpack(lock, { name: `${profile.name} (Minecraft ${lock.minecraft})`, summary: profile.description }, extras);

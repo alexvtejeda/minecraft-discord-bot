@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile, rm } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { dependencyHints, inspectJar, jarName, jarProfileLine, UserError } from "@mc/profile";
+import { dependencyHints, inspectJar, jarName, jarProfileLine, modName, UserError } from "@mc/profile";
 import type { Command } from "./cli";
 import { clientsFor, loadLock, loadProfile, type Deps } from "./commands";
 import { createAdminApi, hhmm, type AdminApi } from "./host/api";
@@ -65,7 +65,9 @@ async function addJar(cmd: Extract<AdminCommand, { kind: "admin-jar-add" }>, api
   deps.log(created ? `Uploaded ${filename} (${what}).` : `${filename} was already uploaded (${what}).`);
   deps.log(`Add this to "mods" in ${profile.name}.json, then run "mc-host profile resolve ${profile.name}":`);
   deps.log(`  ${jarProfileLine({ name: cmd.name ?? jarName(jar.modId, filename), filename, sha512: jar.sha512, side })}`);
-  for (const h of dependencyHints(jar.depends)) deps.log(h);
+  // Mods the lockfile already pulls in need no hint. A missing or stale lockfile just means more hints.
+  const have = await loadLock(cmd.profilesDir, cmd.profile, profile).then((l) => l.files.map((f) => f.slug), () => profile.mods.map(modName));
+  for (const h of dependencyHints(jar.depends, have)) deps.log(h);
 }
 
 export async function runAdmin(cmd: AdminCommand, deps: Deps): Promise<void> {

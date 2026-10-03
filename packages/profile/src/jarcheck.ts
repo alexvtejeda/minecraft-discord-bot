@@ -29,7 +29,9 @@ export interface JarTarget {
 /** A plain file name ending in .jar; the same rule the profile schema uses. */
 export const JAR_FILENAME = /^[^/\\.][^/\\]*\.jar$/;
 
-const BUILT_IN = new Set(["fabricloader", "minecraft", "java", "fabric-api", "fabric"]);
+const BUILT_IN = new Set(["fabricloader", "minecraft", "java", "fabric-api", "fabric", "fabric-api-base"]);
+/** Modules that ship inside Fabric API, like "fabric-resource-loader-v0". */
+const FABRIC_API_MODULE = /^fabric-.+-v\d+$/;
 
 type Part = number | "x";
 
@@ -155,7 +157,7 @@ export async function inspectJar(bytes: Uint8Array, filename: string, target: Ja
   report.version = typeof json.version === "string" ? json.version : null;
   report.minecraftRange = asRange(depends.minecraft);
   report.javaRange = asRange(depends.java);
-  report.depends = Object.keys(depends).filter((k) => !BUILT_IN.has(k)).sort();
+  report.depends = Object.keys(depends).filter((k) => !BUILT_IN.has(k) && !FABRIC_API_MODULE.test(k)).sort();
 
   if (report.minecraftRange && rangeIncludes(report.minecraftRange, target.minecraft) === false) {
     report.problems.push(`${filename} is built for Minecraft ${report.minecraftRange}, but the profile is on ${target.minecraft}.`);
@@ -177,6 +179,7 @@ export function jarProfileLine(o: { name: string; filename: string; sha512: stri
   return JSON.stringify({ jar: o.name, filename: o.filename, sha512: o.sha512, side: o.side });
 }
 
-export function dependencyHints(depends: string[]): string[] {
-  return depends.map((d) => `Needs "${d}". Add it from Modrinth if it's there, or upload its jar too.`);
+/** `have`: names already in the profile or its lockfile, which need no hint. */
+export function dependencyHints(depends: string[], have: string[] = []): string[] {
+  return depends.filter((d) => !have.includes(d)).map((d) => `Needs "${d}". Add it from Modrinth if it's there, or upload its jar too.`);
 }

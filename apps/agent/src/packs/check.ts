@@ -20,6 +20,8 @@ export interface CheckReport {
   /** Packs that pass alone but not together, with the errors nobody could be blamed for. */
   together: { files: string[]; lines: string[] } | null;
   boots: number;
+  /** With no packs: the errors the mods logged on a boot that still started. */
+  baseline?: string[];
 }
 
 const DIDNT_START = "The server didn't finish starting.";
@@ -80,7 +82,7 @@ export async function checkPacks(packs: PackIndex[], boot: Boot, log: (line: str
     for (const [file, lines] of alone) failed.set(file, lines);
     remaining = remaining.filter((p) => !alone.has(p.file));
   }
-  return { packs: packs.map((p) => p.file).sort(), failed, together, boots };
+  return { packs: packs.map((p) => p.file).sort(), failed, together, boots, baseline: packs.length ? undefined : linesOf(baseErrors) };
 }
 
 const cut = (line: string) => (line.length > EVIDENCE_CHARS ? `${line.slice(0, EVIDENCE_CHARS - 1)}…` : line);
@@ -99,7 +101,13 @@ export function formatReport(r: CheckReport): { lines: string[]; summary: string
   }
   const n = r.packs.length;
   const boots = `(${r.boots} boots)`;
-  if (n === 0) return { lines, summary: `The mods loaded without errors ${boots}.`, ok: true };
+  if (n === 0) {
+    if (r.baseline?.length) {
+      lines.push("The mods logged these errors:", ...evidence(r.baseline));
+      return { lines, summary: `The server started, but the mods logged errors ${boots}.`, ok: false };
+    }
+    return { lines, summary: `The mods loaded without errors ${boots}.`, ok: true };
+  }
   if (r.together) {
     return { lines, summary: `${r.failed.size} of ${n} datapacks have errors on their own, but ${r.together.files.length} fail together ${boots}.`, ok: false };
   }

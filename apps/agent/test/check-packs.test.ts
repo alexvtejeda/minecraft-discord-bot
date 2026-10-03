@@ -122,3 +122,12 @@ test("no packs: one boot, and a mods summary", async () => {
   expect(s.calls).toHaveLength(1);
   expect(formatReport(r).summary).toBe("The mods loaded without errors (1 boots).");
 });
+
+// Final review: a mods-only boot that starts but logs errors isn't clean.
+test("no packs: errors the mods log are reported even when the server starts", async () => {
+  const s = scripted(() => ok("[10:00:01] [main/ERROR]: Mixin apply failed for dragonbond"));
+  const f = formatReport(await checkPacks([], s.boot, () => {}));
+  expect(f.ok).toBe(false);
+  expect(f.summary).toBe("The server started, but the mods logged errors (1 boots).");
+  expect(f.lines.join("\n")).toContain("Mixin apply failed for dragonbond");
+});
