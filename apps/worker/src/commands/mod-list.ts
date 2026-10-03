@@ -25,7 +25,11 @@ export const modList: Command = {
       if (!files.length) continue;
       lines.push("", `__${title}__`);
       for (const f of files) {
-        const notes = [f.side === "both" && f.clientOptional ? "optional" : "", f.auto ? "dependency" : ""].filter(Boolean);
+        const notes = [
+          f.side === "both" && f.clientOptional ? "optional" : "",
+          f.auto ? "dependency" : "",
+          f.source === "jar" ? "uploaded" : "",
+        ].filter(Boolean);
         lines.push(`- ${f.slug} ${f.versionNumber}${notes.length ? ` (${notes.join(", ")})` : ""}`);
       }
     }

@@ -90,3 +90,33 @@ describe("/world download", () => {
     );
   });
 });
+
+describe("uploaded jars in the .mrpack", () => {
+  // Review focus 3: a name with spaces goes in as-is.
+  it("puts client jars under overrides/mods and leaves server-only ones out", async () => {
+    const SHA_BOTH = "d".repeat(128);
+    const SHA_SERVER = "e".repeat(128);
+    await env.BUCKET.put(`jars/${SHA_BOTH}.jar`, new Uint8Array([1, 2, 3]));
+    await env.BUCKET.put(`jars/${SHA_SERVER}.jar`, new Uint8Array([4]));
+    const jar = (slug: string, side: "both" | "server", sha512: string, filename: string) =>
+      lockEntry(slug, side, { projectId: "jar", source: "jar", sha512, filename, url: `jars/${sha512}` });
+    await addWorld("w1", "active", [
+      lockEntry("waystones", "both"),
+      jar("dragonbond", "both", SHA_BOTH, "antiquetradingship-1.0.0 Fabric 26.3.jar"),
+      jar("serverjar", "server", SHA_SERVER, "s.jar"),
+    ]);
+    const { res, bytes } = await getPack("w1.mrpack");
+    expect(res.status).toBe(200);
+    const zip = unzipSync(bytes);
+    expect(zip["overrides/mods/antiquetradingship-1.0.0 Fabric 26.3.jar"]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(zip["overrides/mods/s.jar"]).toBeUndefined();
+    const index = JSON.parse(strFromU8(zip["modrinth.index.json"]!));
+    expect(index.files.map((f: { path: string }) => f.path)).toEqual(["mods/waystones-1.0.0.jar"]);
+  });
+
+  it("is a 500 when a pinned jar is missing from R2", async () => {
+    const sha512 = "f".repeat(128);
+    await addWorld("w1", "active", [lockEntry("gone", "both", { projectId: "jar", source: "jar", sha512, url: `jars/${sha512}` })]);
+    expect((await getPack("w1.mrpack")).res.status).toBe(500);
+  });
+});

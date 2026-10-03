@@ -85,4 +85,9 @@ describe("/mod list", () => {
     expect(s.length).toBeLessThanOrEqual(2000);
     expect(s).toContain("cut to fit");
   });
+
+  it("tags uploaded jars", async () => {
+    await addWorld("w1", "active", [lockEntry("dragonbond", "both", { source: "jar", versionNumber: "1.1.1" })]);
+    expect(await content("mod list")).toContain("- dragonbond 1.1.1 (uploaded)");
+  });
 });
