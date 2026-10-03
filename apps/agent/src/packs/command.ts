@@ -4,7 +4,7 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { USER_AGENT, UserError } from "@mc/profile";
 import type { Command } from "../cli";
-import { loadLock, loadProfile, type Deps } from "../commands";
+import { loadLock, loadProfile, localJarSource, type Deps } from "../commands";
 import { javaFor } from "../java/runtime";
 import { ensureEula } from "../run/eula";
 import { buildServer, readMarker } from "../server/build";
@@ -41,6 +41,7 @@ export async function cmdCheckPacks(cmd: Extract<Command, { kind: "check-packs" 
     fetch: deps.fetch,
     cacheDir: deps.cacheDir,
     userAgent: USER_AGENT,
+    jarSource: await localJarSource(deps, lock),
   });
   const javaBin = await javaFor(lock, { cacheDir: deps.cacheDir, fetch: deps.fetch, userAgent: USER_AGENT, log: deps.log, override: deps.javaBin });
   const logsDir = join(dir, "check-logs");

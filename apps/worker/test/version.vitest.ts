@@ -39,7 +39,7 @@ describe("agent version check", () => {
 
   it("lets a current agent through", async () => {
     const token = await addUser();
-    const r = await call("GET", "/agent/manifest", { token, agentVersion: "0.2.0" });
+    const r = await call("GET", "/agent/manifest", { token, agentVersion: "0.3.0" });
     expect(r.status).toBe(404); // no active world, which is past the version check
     expect(r.body.error).toBe("no_active_world");
   });

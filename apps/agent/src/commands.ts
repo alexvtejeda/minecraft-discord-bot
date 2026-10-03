@@ -9,6 +9,7 @@ import {
   createModrinthClient,
   createMojangMeta,
   isJarEntry,
+  isUploadedJar,
   isVanillaCompatible,
   parseLock,
   parseProfile,
@@ -17,6 +18,7 @@ import {
   serializeLock,
   USER_AGENT,
   UserError,
+  type ExtraFile,
   type Fetch,
   type JarLookup,
   type Lockfile,
@@ -25,9 +27,10 @@ import {
 } from "@mc/profile";
 import { runAdmin } from "./admin";
 import type { Command } from "./cli";
+import { fetchVerified, sourceFor, type JarSource } from "./download";
 import { createAdminApi } from "./host/api";
 import { cmdStart, cmdStatus, cmdStop } from "./host/commands";
-import { loadAdminConfig } from "./host/config";
+import { loadAdminConfig, loadHostConfig } from "./host/config";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
 import { javaFor } from "./java/runtime";
@@ -145,6 +148,7 @@ async function cmdBuildServer(cmd: Extract<Command, { kind: "build-server" }>, d
     cacheDir: deps.cacheDir,
     userAgent: USER_AGENT,
     log: deps.log,
+    jarSource: await localJarSource(deps, lock),
   });
   deps.log(`Server ready in ${cmd.dir}. Start it with: mc-host profile run ${cmd.dir}`);
 }
@@ -152,7 +156,14 @@ async function cmdBuildServer(cmd: Extract<Command, { kind: "build-server" }>, d
 async function cmdBuildMrpack(cmd: Extract<Command, { kind: "build-mrpack" }>, deps: Deps): Promise<void> {
   const { profile } = await loadProfile(cmd.profilesDir, cmd.name);
   const lock = await loadLock(cmd.profilesDir, cmd.name, profile);
-  const bytes = await buildMrpack(lock, { name: `${profile.name} (Minecraft ${lock.minecraft})`, summary: profile.description });
+  const source = await localJarSource(deps, lock);
+  const extras: ExtraFile[] = [];
+  for (const f of lock.files.filter((f) => isUploadedJar(f) && f.side !== "server")) {
+    const s = sourceFor(f, deps.fetch, source);
+    const path = await fetchVerified(s.url, f.sha512, { fetch: s.fetch, cacheDir: deps.cacheDir, userAgent: USER_AGENT });
+    extras.push({ path: `mods/${f.filename}`, data: new Uint8Array(await readFile(path)) });
+  }
+  const bytes = await buildMrpack(lock, { name: `${profile.name} (Minecraft ${lock.minecraft})`, summary: profile.description }, extras);
   await writeFile(cmd.out, bytes);
   deps.log(`Wrote ${cmd.out}. Import it in Prism Launcher: Add Instance → Import.`);
   deps.log(
@@ -215,4 +226,24 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
 async function adminJars(deps: Deps): Promise<JarLookup> {
   const api = createAdminApi({ ...(await loadAdminConfig(deps.env ?? process.env, deps.configDir)), fetch: deps.fetch });
   return { lookup: (sha512) => api.getJar(sha512) };
+}
+
+export async function localJarSource(deps: Deps, lock: Lockfile): Promise<JarSource | undefined> {
+  if (!lock.files.some(isUploadedJar)) return undefined;
+  const env = deps.env ?? process.env;
+  for (const load of [
+    async () => {
+      const a = await loadAdminConfig(env, deps.configDir);
+      return { workerUrl: a.workerUrl, secret: a.secret };
+    },
+    async () => {
+      const h = await loadHostConfig(env, deps.configDir);
+      return { workerUrl: h.workerUrl, secret: h.token };
+    },
+  ]) {
+    try {
+      return await load();
+    } catch {}
+  }
+  throw new UserError(`${lock.profile} has uploaded jars, which come from the Worker. Set MC_WORKER_URL and MC_ADMIN_SECRET (or MC_TOKEN).`);
 }

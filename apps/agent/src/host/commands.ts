@@ -25,7 +25,7 @@ function sessionDeps(deps: Deps, cfg: HostConfig, input: TerminalInput): Session
     ask,
     address: () => tailnetAddress(),
     build: async ({ profile, lock, dir }) => {
-      await buildServer({ profile, lock, dir, fetch: deps.fetch, cacheDir: deps.cacheDir, userAgent: USER_AGENT, log: deps.log });
+      await buildServer({ profile, lock, dir, fetch: deps.fetch, cacheDir: deps.cacheDir, userAgent: USER_AGENT, log: deps.log, jarSource: { workerUrl: cfg.workerUrl, secret: cfg.token } });
       return readMarker(dir);
     },
     ensureEula: (serverDir) => ensureEula({ configDir: deps.configDir, serverDir, ask, log: deps.log }),

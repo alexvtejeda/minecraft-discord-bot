@@ -2,8 +2,8 @@ import { beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { sha512Hex, UserError, type Fetch } from "@mc/profile";
-import { fetchVerified } from "../src/download";
+import { sha512Hex, UserError, type Fetch, type LockEntry } from "@mc/profile";
+import { fetchVerified, sourceFor } from "../src/download";
 
 const good = new TextEncoder().encode("jar bytes");
 const bad = new TextEncoder().encode("corrupt!!");
@@ -91,4 +91,20 @@ test("retries a network error once, then gives a plain-English error", async () 
   const p = fetchVerified("https://cdn.modrinth.com/data/y/Other.jar", await sha512Hex(bad), { fetch: down, cacheDir: dir, userAgent: "ua" });
   await expect(p).rejects.toBeInstanceOf(UserError);
   await expect(p).rejects.toThrow(/Couldn't download Other\.jar \(getaddrinfo ENOTFOUND\)\. Check your internet connection/);
+});
+
+test("sourceFor leaves Modrinth entries alone and points jars at the Worker with auth", async () => {
+  const calls: { url: string; auth: string | null }[] = [];
+  const fetch: Fetch = async (url, init) => {
+    calls.push({ url, auth: new Headers(init?.headers).get("Authorization") });
+    return new Response("ok");
+  };
+  const mr = { url: "https://cdn.modrinth.com/x.jar", source: undefined } as LockEntry;
+  expect(sourceFor(mr, fetch, undefined).url).toBe("https://cdn.modrinth.com/x.jar");
+  const jar = { url: `jars/${"a".repeat(128)}`, source: "jar", filename: "a b.jar" } as LockEntry;
+  const s = sourceFor(jar, fetch, { workerUrl: "https://w.test", secret: "tok" });
+  expect(s.url).toBe(`https://w.test/jars/${"a".repeat(128)}`);
+  await s.fetch(s.url, { headers: { "User-Agent": "ua" } });
+  expect(calls).toEqual([{ url: s.url, auth: "Bearer tok" }]);
+  expect(() => sourceFor(jar, fetch, undefined)).toThrow(/a b\.jar is an uploaded jar/);
 });

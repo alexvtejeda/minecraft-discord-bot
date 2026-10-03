@@ -52,6 +52,8 @@ async function makeLock(): Promise<Lockfile> {
   };
 }
 
+const lockWith = async (files: LockEntry[]): Promise<Lockfile> => ({ ...(await makeLock()), files });
+
 const fetch: Fetch = async (url) => {
   if (url.endsWith("/server/jar")) return new Response(bytes("launcher"));
   const slug = url.split("/").pop()!.replace(".jar", "");
@@ -171,4 +173,25 @@ test("a corrupt marker is a plain-English error", async () => {
   mkdirSync(serverDir, { recursive: true });
   writeFileSync(join(serverDir, MARKER), "{not json");
   await expect(readMarker(serverDir)).rejects.toThrow(/is damaged/);
+});
+
+// Review focus 3 and 5.
+test("uploaded jars come from the Worker with the token, spaces and all", async () => {
+  const jar = { ...(await entry("deeper end", "both")), filename: "deeper end.jar", url: `jars/${"a".repeat(128)}`, source: "jar" as const };
+  const seen: { url: string; auth: string | null }[] = [];
+  const fetch: Fetch = async (url, init) => {
+    seen.push({ url, auth: new Headers(init?.headers).get("Authorization") });
+    return new Response(url.includes("/jars/") ? bytes("deeper end") : bytes("launcher"));
+  };
+  await buildServer({ profile: makeProfile(), lock: await lockWith([jar]), dir: serverDir, fetch, cacheDir: cache, userAgent: "t", jarSource: { workerUrl: "https://w.test", secret: "tok" } });
+  expect(readdirSync(join(serverDir, "mods"))).toEqual(["deeper end.jar"]);
+  expect(seen.find((s) => s.url.includes("/jars/"))).toEqual({ url: `https://w.test/jars/${"a".repeat(128)}`, auth: "Bearer tok" });
+});
+
+test("a lock with uploaded jars and no jarSource fails before touching the folder", async () => {
+  const jar = { ...(await entry("x", "both")), url: `jars/${"a".repeat(128)}`, source: "jar" as const };
+  await expect(buildServer({ profile: makeProfile(), lock: await lockWith([jar]), dir: serverDir, fetch: async () => new Response(""), cacheDir: cache, userAgent: "t" })).rejects.toThrow(
+    /x\.jar is an uploaded jar/,
+  );
+  expect(existsSync(serverDir)).toBe(false);
 });

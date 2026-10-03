@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { serverLauncherUrl, UserError, type Fetch, type Lockfile, type Profile } from "@mc/profile";
-import { fetchVerified } from "../download";
+import { fetchVerified, sourceFor, type JarSource } from "../download";
 import { matchPacks } from "./packs";
 import { mergeProperties } from "./properties";
 
@@ -29,6 +29,8 @@ export interface BuildServerOptions {
   cacheDir: string;
   userAgent: string;
   log?: (line: string) => void;
+  /** Needed when the lockfile has uploaded jars. */
+  jarSource?: JarSource;
 }
 
 export async function buildServer(o: BuildServerOptions): Promise<{ mods: string[]; removed: string[]; datapacks: string[] }> {
@@ -40,6 +42,7 @@ export async function buildServer(o: BuildServerOptions): Promise<{ mods: string
       throw new UserError(`Unsafe file name in the lockfile: "${f.filename}". Run "mc-host profile resolve" again.`);
     }
   }
+  const sources = wanted.map((f) => sourceFor(f, o.fetch, o.jarSource));
 
   // Everything that can fail without touching the folder happens first: the folder guard,
   // the datapack check and every download. A dropped connection leaves the old server intact.
@@ -47,7 +50,10 @@ export async function buildServer(o: BuildServerOptions): Promise<{ mods: string
   const packs = await planDatapacks(o);
   const launcher = await fetchVerified(serverLauncherUrl(o.lock.minecraft, o.lock.fabricLoader, o.lock.fabricInstaller), undefined, dl);
   const jars: [string, string][] = [];
-  for (const f of wanted) jars.push([await fetchVerified(f.url, f.sha512, dl), f.filename]);
+  for (const [i, f] of wanted.entries()) {
+    const s = sources[i]!;
+    jars.push([await fetchVerified(s.url, f.sha512, { ...dl, fetch: s.fetch }), f.filename]);
+  }
 
   const marker: ServerMarker = {
     profile: o.profile.name,
