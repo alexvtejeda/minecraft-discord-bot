@@ -1,6 +1,7 @@
 import { UserError } from "./errors";
 import { chooseLoader, type FabricMeta } from "./fabric";
-import { profileHash, type LockEntry, type Lockfile } from "./lockfile";
+import { rangeIncludes, type JarInfo } from "./jarcheck";
+import { jarLockEntry, profileHash, type LockEntry, type Lockfile } from "./lockfile";
 import type { ModrinthClient, MrProject, MrVersion } from "./modrinth";
 import type { MojangMeta } from "./mojang";
 import {
@@ -12,13 +13,19 @@ import {
   sideOf,
   type Placement,
 } from "./placement";
-import { isModrinthEntry, type Profile, type Side } from "./schema";
+import { isJarEntry, isModrinthEntry, type Profile, type Side } from "./schema";
 import { pickVersion, primaryFile } from "./select";
+
+export interface JarLookup {
+  lookup(sha512: string): Promise<JarInfo | null>;
+}
 
 export interface ResolveDeps {
   modrinth: ModrinthClient;
   fabric: FabricMeta;
   mojang: MojangMeta;
+  /** Uploaded jars. Only needed when the profile lists some. */
+  jars?: JarLookup;
 }
 
 export interface WaitingStatus {
@@ -129,8 +136,32 @@ export async function resolveProfile(profile: Profile, deps: ResolveDeps): Promi
         auto: n.auto,
         prerelease: n.version.version_type !== "release",
       };
-    })
-    .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
+    });
+
+  const fromModrinth = new Set(files.map((f) => f.slug));
+  const jarEntries = profile.mods.filter(isJarEntry);
+  if (jarEntries.length && !deps.jars) {
+    throw new UserError(`${profile.name} has uploaded jars, so resolving it needs the Worker: set MC_WORKER_URL and MC_ADMIN_SECRET.`);
+  }
+  for (const j of jarEntries) {
+    const info = await deps.jars!.lookup(j.sha512);
+    if (!info) {
+      throw new UserError(
+        `${j.jar}: sha512 ${j.sha512.slice(0, 12)} isn't uploaded. Run "mc-host admin jar add ${profile.name} ${j.filename}".`,
+      );
+    }
+    if (info.minecraftRange && rangeIncludes(info.minecraftRange, mc) === false) {
+      throw new UserError(`${j.jar} is built for Minecraft ${info.minecraftRange}, but ${profile.name} is on ${mc}. Remove it from the profile.`);
+    }
+    if (fromModrinth.has(j.jar)) {
+      throw new UserError(`"${j.jar}" is also the name of a mod from Modrinth. Give the jar entry another name.`);
+    }
+    if (info.modId && info.modId !== j.jar && fromModrinth.has(info.modId)) {
+      warnings.push(`${j.jar} may be the same mod as Modrinth's "${info.modId}". Remove one of them if the server fails to start.`);
+    }
+    files.push(jarLockEntry(j, info));
+  }
+  files.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 
   const waiting = await checkWaiting(profile, deps.modrinth);
   warnings.push(...waiting.warnings);

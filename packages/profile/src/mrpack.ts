@@ -1,7 +1,7 @@
 import { strToU8, zipSync, type Zippable } from "fflate";
 import { UserError } from "./errors";
 import { sha256Hex } from "./hash";
-import { serializeLock, type LockEntry, type Lockfile } from "./lockfile";
+import { isUploadedJar, serializeLock, type LockEntry, type Lockfile } from "./lockfile";
 
 export type EnvNeed = "required" | "optional" | "unsupported";
 
@@ -23,7 +23,7 @@ export interface MrpackIndex {
   dependencies: Record<string, string>;
 }
 
-/** A file bundled inside the pack under overrides/, e.g. a jar that only exists in R2. */
+/** A file bundled inside the pack under overrides/: uploaded jars, which only the Worker has. */
 export interface ExtraFile {
   path: string;
   data: Uint8Array;
@@ -41,6 +41,7 @@ export function clientEnv(f: LockEntry): MrpackFile["env"] | null {
 
 export async function mrpackIndex(lock: Lockfile, meta: { name: string; summary?: string }): Promise<MrpackIndex> {
   const files = lock.files.flatMap((f): MrpackFile[] => {
+    if (isUploadedJar(f)) return [];
     const env = clientEnv(f);
     if (!env) return [];
     return [

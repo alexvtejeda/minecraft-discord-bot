@@ -1,6 +1,7 @@
 import { UserError } from "./errors";
 import { sha256Hex } from "./hash";
-import type { Profile, Side } from "./schema";
+import type { JarInfo } from "./jarcheck";
+import type { JarEntry, Profile, Side } from "./schema";
 
 export interface LockEntry {
   slug: string;
@@ -19,6 +20,8 @@ export interface LockEntry {
   auto: boolean;
   /** Only a beta or alpha build was available. */
   prerelease: boolean;
+  /** "jar": uploaded to the Worker rather than from Modrinth; url is then relative to the Worker. */
+  source?: "jar";
 }
 
 export interface Lockfile {
@@ -53,4 +56,27 @@ export function parseLock(text: string, source: string): Lockfile {
 
 export function profileHash(profile: Profile): Promise<string> {
   return sha256Hex(JSON.stringify(profile));
+}
+
+export const jarUrl = (sha512: string): string => `jars/${sha512}`;
+
+export const isUploadedJar = (f: LockEntry): boolean => f.source === "jar";
+
+export function jarLockEntry(j: JarEntry, info: JarInfo): LockEntry {
+  return {
+    slug: j.jar,
+    projectId: "jar",
+    versionId: j.sha512.slice(0, 12),
+    versionNumber: info.version ?? "unknown",
+    filename: j.filename,
+    url: jarUrl(j.sha512),
+    sha1: info.sha1,
+    sha512: j.sha512,
+    size: info.size,
+    side: j.side,
+    clientOptional: false,
+    auto: false,
+    prerelease: false,
+    source: "jar",
+  };
 }

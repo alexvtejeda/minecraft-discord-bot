@@ -2,6 +2,8 @@ import type { FabricMeta } from "../src/fabric";
 import type { ModrinthClient, MrDependency, MrProject, MrVersion, SideSupport } from "../src/modrinth";
 import type { MojangMeta } from "../src/mojang";
 import { parseProfile, type Profile } from "../src/schema";
+import type { JarInfo } from "../src/jarcheck";
+import type { JarLookup } from "../src/resolve";
 
 export function makeVersion(projectId: string, o: Partial<MrVersion> & { id: string }): MrVersion {
   return {
@@ -86,4 +88,30 @@ export function makeProfile(over: Record<string, unknown> = {}): Profile {
     },
     "test.json",
   );
+}
+
+export function jarInfo(sha512: string, over: Partial<JarInfo> = {}): JarInfo {
+  return {
+    sha512,
+    sha1: "1".repeat(40),
+    size: 1234,
+    filename: "uploaded.jar",
+    modId: "dragonbond",
+    version: "1.1.1",
+    minecraftRange: "=26.3",
+    javaRange: ">=25",
+    depends: [],
+    ...over,
+  };
+}
+
+/** Uploaded jars by sha512. */
+export class FakeJars implements JarLookup {
+  rows = new Map<string, JarInfo>();
+  add(info: JarInfo) {
+    this.rows.set(info.sha512, info);
+  }
+  async lookup(sha512: string) {
+    return this.rows.get(sha512) ?? null;
+  }
 }

@@ -84,3 +84,14 @@ test("a client-only file that is required maps to env.client required and blocks
   ]);
   expect(isVanillaCompatible(onlyReq)).toBe(false);
 });
+
+test("uploaded jars stay out of files[] and ride in overrides", async () => {
+  const jar: LockEntry = { ...entry("dragonbond", "both"), filename: "a b.jar", url: `jars/${"c".repeat(128)}`, projectId: "jar", source: "jar" };
+  const withJar: Lockfile = { ...lock, files: [entry("waystones", "both"), jar] };
+  const index = await mrpackIndex(withJar, { name: "t" });
+  expect(index.files.map((f) => f.path)).toEqual(["mods/waystones.jar"]);
+  const extras = [{ path: "mods/a b.jar", data: new Uint8Array([1, 2]) }];
+  const bytes = await buildMrpack(withJar, { name: "t" }, extras);
+  expect(unzipSync(bytes)["overrides/mods/a b.jar"]).toEqual(new Uint8Array([1, 2]));
+  expect(await buildMrpack(withJar, { name: "t" }, extras)).toEqual(bytes);
+});

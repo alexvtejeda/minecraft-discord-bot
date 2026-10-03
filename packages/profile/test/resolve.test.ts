@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { parseLock, serializeLock } from "../src/lockfile";
 import { checkAvailability, resolveProfile, type ResolveDeps } from "../src/resolve";
-import { dep, FakeModrinth, fakeFabric, fakeMojang, makeProfile } from "./fakes";
+import { dep, FakeJars, FakeModrinth, fakeFabric, fakeMojang, jarInfo, makeProfile } from "./fakes";
 
 function deps(mr: FakeModrinth): ResolveDeps {
   return { modrinth: mr, fabric: fakeFabric, mojang: fakeMojang };
@@ -220,4 +220,77 @@ test("a client-only library required by a both mod is locked as required on the 
   mr.add("waystones", [{ dependencies: [dep(lib)] }]);
   const { lock } = await resolveProfile(makeProfile({ mods: [{ modrinth: "waystones", side: "both" }] }), deps(mr));
   expect(lock.files.find((f) => f.slug === "client-lib")).toMatchObject({ side: "client-optional", clientOptional: false, auto: true });
+});
+
+describe("uploaded jars", () => {
+  const SHA = "b".repeat(128);
+  const entry = { jar: "dragonbond", filename: "the deeper end.jar", sha512: SHA, side: "both" };
+
+  test("become lock entries with source jar, sorted with the rest", async () => {
+    const mr = new FakeModrinth();
+    mr.add("lithium");
+    const jars = new FakeJars();
+    jars.add(jarInfo(SHA));
+    const profile = makeProfile({ mods: [{ modrinth: "lithium", side: "server" }, entry] });
+    const { lock } = await resolveProfile(profile, { ...deps(mr), jars });
+    expect(lock.files.map((f) => f.slug)).toEqual(["dragonbond", "lithium"]);
+    expect(lock.files[0]).toEqual({
+      slug: "dragonbond",
+      projectId: "jar",
+      versionId: SHA.slice(0, 12),
+      versionNumber: "1.1.1",
+      filename: "the deeper end.jar",
+      url: `jars/${SHA}`,
+      sha1: "1".repeat(40),
+      sha512: SHA,
+      size: 1234,
+      side: "both",
+      clientOptional: false,
+      auto: false,
+      prerelease: false,
+      source: "jar",
+    });
+    expect(parseLock(serializeLock(lock), "x").files[0]!.source).toBe("jar");
+  });
+
+  test("fail when the jar was never uploaded", async () => {
+    const profile = makeProfile({ mods: [entry] });
+    await expect(resolveProfile(profile, { ...deps(new FakeModrinth()), jars: new FakeJars() })).rejects.toThrow(
+      `dragonbond: sha512 ${SHA.slice(0, 12)} isn't uploaded. Run "mc-host admin jar add test the deeper end.jar".`,
+    );
+  });
+
+  test("fail without a jar client", async () => {
+    await expect(resolveProfile(makeProfile({ mods: [entry] }), deps(new FakeModrinth()))).rejects.toThrow(/MC_WORKER_URL and MC_ADMIN_SECRET/);
+  });
+
+  test("fail when the jar is for another Minecraft version", async () => {
+    const jars = new FakeJars();
+    jars.add(jarInfo(SHA, { minecraftRange: "=26.1.2" }));
+    await expect(resolveProfile(makeProfile({ mods: [entry] }), { ...deps(new FakeModrinth()), jars })).rejects.toThrow(
+      "dragonbond is built for Minecraft =26.1.2, but test is on 26.3. Remove it from the profile.",
+    );
+  });
+
+  test("a jar can't share a name with a Modrinth file", async () => {
+    const mr = new FakeModrinth();
+    mr.add("lithium");
+    const jars = new FakeJars();
+    jars.add(jarInfo(SHA));
+    const profile = makeProfile({ mods: [{ modrinth: "lithium", side: "server" }, { ...entry, jar: "x" }] });
+    // Same name via a dependency: lithium pulls in "x".
+    mr.add("x");
+    mr.versions.get("LITHIUM")![0]!.dependencies = [dep("X")];
+    await expect(resolveProfile(profile, { ...deps(mr), jars })).rejects.toThrow(/"x" is also the name of a mod from Modrinth/);
+  });
+
+  test("warn when the jar's mod ID matches a Modrinth slug", async () => {
+    const mr = new FakeModrinth();
+    mr.add("dragonbond-mr");
+    const jars = new FakeJars();
+    jars.add(jarInfo(SHA, { modId: "dragonbond-mr" }));
+    const profile = makeProfile({ mods: [{ modrinth: "dragonbond-mr", side: "both" }, entry] });
+    const { warnings } = await resolveProfile(profile, { ...deps(mr), jars });
+    expect(warnings).toContain('dragonbond may be the same mod as Modrinth\'s "dragonbond-mr". Remove one of them if the server fails to start.');
+  });
 });
