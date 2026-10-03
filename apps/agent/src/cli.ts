@@ -8,7 +8,7 @@ export type Command =
   | { kind: "resolve"; name: string; check?: string; addReady: boolean; profilesDir: string }
   | { kind: "build-server"; name: string; dir: string; packsDir?: string; force: boolean; profilesDir: string }
   | { kind: "build-mrpack"; name: string; out: string; profilesDir: string }
-  | { kind: "check-packs"; name: string; packsDir: string; all: boolean; keep: boolean; profilesDir: string }
+  | { kind: "check-packs"; name: string; packsDir?: string; all: boolean; keep: boolean; profilesDir: string }
   | { kind: "run"; dir: string }
   | { kind: "start" }
   | { kind: "stop" }
@@ -45,8 +45,9 @@ Profiles
       Write a modpack that Prism Launcher can import.
   profile run <dir>
       Start a server folder made by build-server.
-  profile check-packs <profile> --packs <folder> [--all] [--keep]
-      Boot a test server with the datapacks and name the ones with errors.
+  profile check-packs <profile> [--packs <folder>] [--all] [--keep]
+      Boot a test server and name the mods or datapacks with errors.
+      --packs        the datapack zips (not needed when the profile has none)
       --all          check every zip in <folder>, not just the profile's datapacks
       --keep         keep the test world and the boot logs
 
@@ -126,7 +127,7 @@ export function parseCommand(argv: string[]): Command {
           return {
             kind: "check-packs",
             name: need(a, "<profile>"),
-            packsDir: need(values.packs, "--packs <folder>"),
+            packsDir: values.packs,
             all: values.all ?? false,
             keep: values.keep ?? false,
             profilesDir,

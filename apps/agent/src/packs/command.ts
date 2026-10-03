@@ -19,14 +19,15 @@ export async function cmdCheckPacks(cmd: Extract<Command, { kind: "check-packs" 
   const { profile } = await loadProfile(cmd.profilesDir, cmd.name);
   const lock = await loadLock(cmd.profilesDir, cmd.name, profile);
   const files = await packFiles(cmd, profile.datapacks);
-  const packs = await Promise.all(files.map((f) => indexPack(cmd.packsDir, f)));
+  // packFiles only returns files when --packs was given.
+  const packs = await Promise.all(files.map((f) => indexPack(cmd.packsDir!, f)));
 
   const dir = join(deps.cacheDir, "check-packs", profile.name);
   await mkdir(dir, { recursive: true });
   if (!(await ensureEula({ configDir: deps.configDir, serverDir: dir, ask: deps.ask, log: deps.log }))) {
     throw new UserError("You need to agree to the EULA to check datapacks.");
   }
-  deps.log(`Checking ${files.length} datapacks against ${profile.name} (Minecraft ${lock.minecraft})…`);
+  deps.log(files.length ? `Checking ${files.length} datapacks against ${profile.name} (Minecraft ${lock.minecraft})…` : `Checking ${profile.name}'s mods (Minecraft ${lock.minecraft})…`);
   // The server files stay between checks; only the world is thrown away.
   await buildServer({
     profile: {
@@ -46,7 +47,7 @@ export async function cmdCheckPacks(cmd: Extract<Command, { kind: "check-packs" 
   const javaBin = await javaFor(lock, { cacheDir: deps.cacheDir, fetch: deps.fetch, userAgent: USER_AGENT, log: deps.log, override: deps.javaBin });
   const logsDir = join(dir, "check-logs");
   await rm(logsDir, { recursive: true, force: true });
-  const boot = createBoot({ serverDir: dir, levelName: LEVEL, packsDir: cmd.packsDir, javaBin, marker: await readMarker(dir), logsDir });
+  const boot = createBoot({ serverDir: dir, levelName: LEVEL, packsDir: cmd.packsDir ?? dir, javaBin, marker: await readMarker(dir), logsDir });
 
   let passed = false;
   try {
@@ -79,6 +80,10 @@ function freePort(): Promise<number> {
 }
 
 async function packFiles(cmd: Extract<Command, { kind: "check-packs" }>, datapacks: string[]): Promise<string[]> {
+  if (!cmd.all && !datapacks.length) return [];
+  if (!cmd.packsDir) {
+    throw new UserError(cmd.all ? "--all needs --packs <folder>." : `${cmd.name} has ${datapacks.length} datapacks. Add --packs <folder> pointing at their zips.`);
+  }
   if (!existsSync(cmd.packsDir)) throw new UserError(`The --packs folder ${cmd.packsDir} doesn't exist. Check the path and try again.`);
   const names = await readdir(cmd.packsDir);
   if (cmd.all) {
@@ -86,7 +91,6 @@ async function packFiles(cmd: Extract<Command, { kind: "check-packs" }>, datapac
     if (!zips.length) throw new UserError(`There are no .zip files in ${cmd.packsDir}.`);
     return zips;
   }
-  if (!datapacks.length) throw new UserError(`${cmd.name} has no datapacks. Add --all to check every zip in ${cmd.packsDir}.`);
   const { found, missing } = matchPacks(datapacks, names);
   if (missing.length) {
     throw new UserError(`These datapacks aren't in ${cmd.packsDir}: ${missing.join(", ")}. Add their zips, or remove them from the profile.`);

@@ -71,3 +71,26 @@ export function attribute(errors: LogError[], packs: PackIndex[]): { blamed: Map
   }
   return { blamed, unattributed };
 }
+
+const FABRIC_REPORT = /Incompatible mods? found|Some of your mods are incompatible|Mod resolution failed/i;
+const FABRIC_ITEM = /^\s*-\s+(.+)$/;
+
+/** The " - …" items of Fabric's incompatible-mods report: what's missing or clashing. */
+export function fabricModProblems(lines: string[]): string[] {
+  const out: string[] = [];
+  let inside = false;
+  for (const line of lines) {
+    if (FABRIC_REPORT.test(line)) {
+      inside = true;
+      continue;
+    }
+    if (!inside) continue;
+    if (STACK.test(line) || HEADER.test(line)) {
+      inside = false;
+      continue;
+    }
+    const item = FABRIC_ITEM.exec(line)?.[1]?.trim();
+    if (item && !out.includes(item)) out.push(item);
+  }
+  return out;
+}

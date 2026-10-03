@@ -104,3 +104,21 @@ test("the report for packs that only fail together, and for a clean run", () => 
     "All 2 datapacks loaded without errors (2 boots).",
   );
 });
+
+test("a mod problem at the baseline boot is reported by name", async () => {
+  const s = scripted(() => ({
+    lines: [
+      "[12:00:01] [main/ERROR]: Incompatible mods found!",
+      "\t - Install citadel, version 26.3-1.0.0 or later.",
+    ],
+    started: false,
+  }));
+  await expect(checkPacks([], s.boot, () => {})).rejects.toThrow("The server doesn't start because of its mods:\n  - Install citadel, version 26.3-1.0.0 or later.");
+});
+
+test("no packs: one boot, and a mods summary", async () => {
+  const s = scripted(() => ok());
+  const r = await checkPacks([], s.boot, () => {});
+  expect(s.calls).toHaveLength(1);
+  expect(formatReport(r).summary).toBe("The mods loaded without errors (1 boots).");
+});

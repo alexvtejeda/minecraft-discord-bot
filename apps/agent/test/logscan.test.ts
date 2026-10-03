@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PackIndex } from "../src/packs/index";
-import { attribute, errorKey, packFileMentions, resourceIds, scanLog } from "../src/packs/logscan";
+import { attribute, errorKey, fabricModProblems, packFileMentions, resourceIds, scanLog } from "../src/packs/logscan";
 
 const log = (name: string) => readFileSync(join(import.meta.dir, "fixtures", "packs", `${name}.log`), "utf8").split(/\r?\n/);
 const firstLines = (name: string) => scanLog(log(name)).map((e) => e.lines[0]);
@@ -88,4 +88,24 @@ test("errorKey ignores object hashes and uuids that change between boots", () =>
   const a = scanLog(["[10:00:00] [main/ERROR]: Bad codec for net.minecraft.class_2960@6d3af739 in 3f2a1b4c-0d9e-4f11-8a2b-7c6d5e4f3a21"]);
   const b = scanLog(["[10:00:00] [main/ERROR]: Bad codec for net.minecraft.class_2960@1b2c3d4e in 9e8d7c6b-5a4f-4e3d-2c1b-0a9f8e7d6c5b"]);
   expect(errorKey(a[0]!)).toBe(errorKey(b[0]!));
+});
+
+const FABRIC_FAIL = [
+  "[12:00:00] [main/INFO]: Loading 52 mods",
+  "[12:00:01] [main/ERROR]: Incompatible mods found!",
+  "net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!",
+  "A potential solution has been determined, this may resolve your problem:",
+  "\t - Install citadel, version 26.3-1.0.0 or later.",
+  "More details:",
+  "\t - Mod 'Alex's Mobs' (alexsmobs) 1.0.0 requires version 26.3-1.0.0 or later of mod 'citadel', which is missing!",
+  "\tat net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51)",
+  "\t - not part of the report",
+];
+
+test("fabricModProblems lists the report's items once each", () => {
+  expect(fabricModProblems(FABRIC_FAIL)).toEqual([
+    "Install citadel, version 26.3-1.0.0 or later.",
+    "Mod 'Alex's Mobs' (alexsmobs) 1.0.0 requires version 26.3-1.0.0 or later of mod 'citadel', which is missing!",
+  ]);
+  expect(fabricModProblems(["[12:00:00] [main/INFO]: Done"])).toEqual([]);
 });

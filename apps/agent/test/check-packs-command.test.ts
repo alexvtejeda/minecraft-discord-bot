@@ -108,9 +108,7 @@ test("--keep keeps the test world and one log per boot", async () => {
   expect(lines).toContain(`The test world and the boot logs are in ${scratch}.`);
 });
 
-test("a profile without datapacks needs --all, and missing zips are named", async () => {
-  await writeProfile([]);
-  await expect(check()).rejects.toThrow(`test has no datapacks. Add --all to check every zip in ${packsDir}.`);
+test("missing zips are named", async () => {
   await writeProfile(["vt:gone"]);
   await expect(check()).rejects.toThrow(`These datapacks aren't in ${packsDir}: vt:gone.`);
 });

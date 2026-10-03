@@ -32,7 +32,7 @@ test("plain-English errors for missing args, unknown commands and flags", () => 
   expect(() => parseCommand(["profile", "build-server", "adventure"])).toThrow(/Missing <dir>/);
   expect(() => parseCommand(["profile", "frobnicate"])).toThrow(/Unknown command "profile frobnicate"/);
   expect(() => parseCommand(["profile", "resolve", "x", "--nope"])).toThrow(/Unknown option/);
-  expect(() => parseCommand(["profile", "check-packs", "adventure"])).toThrow(/Missing --packs <folder>/);
+  expect(parseCommand(["profile", "check-packs", "cst"])).toMatchObject({ kind: "check-packs", name: "cst", packsDir: undefined });
 });
 
 test("parses the hosting and admin commands", () => {

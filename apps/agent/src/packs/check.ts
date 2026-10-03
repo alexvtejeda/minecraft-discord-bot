@@ -1,7 +1,7 @@
 import { UserError } from "@mc/profile";
 import { packNameFromFilename } from "../server/packs";
 import type { PackIndex } from "./index";
-import { attribute, errorKey, scanLog, type LogError } from "./logscan";
+import { attribute, errorKey, fabricModProblems, scanLog, type LogError } from "./logscan";
 
 export interface BootResult {
   lines: string[];
@@ -35,10 +35,12 @@ export async function checkPacks(packs: PackIndex[], boot: Boot, log: (line: str
     return boot(files, label);
   };
 
-  log("Booting without datapacks first, to see which errors the mods cause on their own…");
+  log(packs.length ? "Booting without datapacks first, to see which errors the mods cause on their own…" : "Booting with the mods only…");
   const base = await run([], "baseline");
   const baseErrors = scanLog(base.lines);
   if (!base.started) {
+    const mods = fabricModProblems(base.lines);
+    if (mods.length) throw new UserError(`The server doesn't start because of its mods:\n${mods.map((m) => `  - ${m}`).join("\n")}`);
     const last = linesOf(baseErrors).slice(-5);
     throw new UserError(
       `The server doesn't start even without datapacks, so the packs can't be checked. Fix that first.${last.length ? `\n${last.join("\n")}` : ""}`,
@@ -97,6 +99,7 @@ export function formatReport(r: CheckReport): { lines: string[]; summary: string
   }
   const n = r.packs.length;
   const boots = `(${r.boots} boots)`;
+  if (n === 0) return { lines, summary: `The mods loaded without errors ${boots}.`, ok: true };
   if (r.together) {
     return { lines, summary: `${r.failed.size} of ${n} datapacks have errors on their own, but ${r.together.files.length} fail together ${boots}.`, ok: false };
   }
