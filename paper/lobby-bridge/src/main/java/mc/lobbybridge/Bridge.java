@@ -63,12 +63,21 @@ public final class Bridge {
     }
 
     public void join(String player) {
+        join(player, false);
+    }
+
+    /** transferred: the player arrived by transfer (e.g. sent back by a stopping host), so don't send them straight out again. */
+    public void join(String player, boolean transferred) {
         if (host == null) {
             lobby.message(player, "Nobody's hosting right now. /status in Discord shows who hosted last.");
             return;
         }
+        if (transferred) {
+            lobby.message(player, "Type /play to join " + host.holder() + ".");
+            return;
+        }
         lobby.title(player, "Sending you to " + host.holder() + "'s server…");
-        arriving.add(player);
+        if (countdown < 0) arriving.add(player);
     }
 
     public void quit(String player) {

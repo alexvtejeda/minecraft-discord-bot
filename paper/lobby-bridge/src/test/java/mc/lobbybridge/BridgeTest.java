@@ -52,6 +52,16 @@ class BridgeTest {
     }
 
     @Test
+    void aTransferredInPlayerIsNotAutoSent() {
+        bridge.setHost(ALEX);
+        lobby.players.add("sam");
+        bridge.join("sam", true);
+        assertEquals(List.of("sam message: Type /play to join Alex."), lobby.events);
+        ticks(3);
+        assertTrue(lobby.transfers().isEmpty());
+    }
+
+    @Test
     void hostGoingAwayCancelsTheCountdown() {
         lobby.players.add("sam");
         bridge.setHost(ALEX);

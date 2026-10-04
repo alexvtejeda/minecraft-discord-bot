@@ -39,6 +39,10 @@ public final class LobbyBridgePlugin extends JavaPlugin implements Listener {
             // Typed by mc-host lobby into the console; players can't use it.
             commands.register(Commands.literal("lobbybridge")
                     .requires(source -> source.getSender() instanceof ConsoleCommandSender)
+                    .executes(ctx -> {
+                        ctx.getSource().getSender().sendPlainMessage(Bridge.USAGE);
+                        return Command.SINGLE_SUCCESS;
+                    })
                     .then(Commands.argument("args", StringArgumentType.greedyString())
                             .executes(ctx -> {
                                 String reply = bridge.command(StringArgumentType.getString(ctx, "args"));
@@ -51,7 +55,7 @@ public final class LobbyBridgePlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        bridge.join(event.getPlayer().getName());
+        bridge.join(event.getPlayer().getName(), event.getPlayer().isTransferred());
     }
 
     @EventHandler
