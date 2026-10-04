@@ -4,6 +4,7 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "test": "bun test && bun run --cwd apps/worker test",
+    "test:plugin": "scripts/gradle.sh test",
     "typecheck": "tsc -p . && tsc -p apps/worker",
     "test:integration": "INTEGRATION=1 bun test apps/agent/test/integration.test.ts"
   },

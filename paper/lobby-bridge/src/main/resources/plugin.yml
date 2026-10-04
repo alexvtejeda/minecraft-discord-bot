@@ -1,0 +1,5 @@
+name: LobbyBridge
+version: '1.0.0'
+main: mc.lobbybridge.LobbyBridgePlugin
+api-version: '26.3'
+description: Sends lobby players to whoever is hosting. Driven by mc-host lobby.

@@ -20,3 +20,8 @@ VanillaTweaks_*/
 
 # Editor swap files
 .*.swp
+
+# Gradle (paper/lobby-bridge)
+paper/lobby-bridge/.gradle/
+paper/lobby-bridge/.gradle-home/
+paper/lobby-bridge/build/
