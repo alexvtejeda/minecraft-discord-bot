@@ -6,6 +6,7 @@ import { agent } from "./routes/agent";
 import { admin } from "./routes/admin";
 import { enroll, setupScript } from "./routes/enroll";
 import { interactions } from "./routes/interactions";
+import { lobby } from "./routes/lobby";
 import { jars } from "./routes/jars";
 import { modpack } from "./routes/modpack";
 
@@ -16,6 +17,7 @@ app.get("/health", (c) => c.text("ok"));
 app.route("/dev", dev);
 app.route("/admin", admin);
 app.route("/agent", agent);
+app.route("/lobby", lobby);
 app.route("/interactions", interactions);
 app.route("/modpack", modpack);
 app.route("/jars", jars);

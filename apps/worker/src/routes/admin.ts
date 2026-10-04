@@ -9,6 +9,7 @@ import {
   type CreateWorldResponse,
   type JarInfoBody,
   type JarUploadResponse,
+  type LobbyReleaseResponse,
   type MintTokenResponse,
   type ReleaseResponse,
   type UploadTarget,
@@ -18,6 +19,7 @@ import { adminAuth } from "../auth";
 import type { AppEnv, Env } from "../env";
 import { ApiError, readBody } from "../errors";
 import { getJar, MAX_JAR_BYTES, storeJar } from "../jars";
+import { forceReleaseSlot } from "../lobby";
 import { forceRelease, isHeld, leaseInfo, readLease } from "../lease";
 import { beginUpload, commitSnapshot } from "../snapshots";
 import { listUsers, mintLobbyToken, mintToken } from "../users";
@@ -50,6 +52,11 @@ admin.post("/lobby/token", async (c) => {
   const { name } = await readBody(c, LobbyTokenRequestSchema);
   const body: MintTokenResponse = { token: await mintLobbyToken(c.env.DB, name, Date.now()) };
   return c.json(body, 201);
+});
+
+admin.post("/lobby/release", async (c) => {
+  const body: LobbyReleaseResponse = { released: await forceReleaseSlot(c.env.DB, Date.now()) };
+  return c.json(body);
 });
 
 admin.post("/lease/release", async (c) => {
