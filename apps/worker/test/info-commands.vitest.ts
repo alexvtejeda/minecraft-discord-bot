@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { claimLease } from "../src/lease";
 import { ALEX, postInteraction, slash } from "./discord";
-import { addSnapshot, addUser, addWorld, hostSince, lockEntry } from "./helpers";
+import { addSnapshot, addUser, addWorld, hostSince, lobbyUp, lockEntry } from "./helpers";
 
 const content = async (path: string) => (await postInteraction(slash(path))).body.data.content as string;
 const hostNow = () => hostSince(ALEX, "w1", 72 * 60_000);
@@ -89,5 +89,34 @@ describe("/mod list", () => {
   it("tags uploaded jars", async () => {
     await addWorld("w1", "active", [lockEntry("dragonbond", "both", { source: "jar", versionNumber: "1.1.1" })]);
     expect(await content("mod list")).toContain("- dragonbond 1.1.1 (uploaded)");
+  });
+});
+
+describe("the lobby in /status and /join", () => {
+  it("/status shows the lobby, or the direct address when the lobby is down", async () => {
+    await addWorld("w1");
+    await hostNow();
+    expect(await content("status")).toContain("Lobby: ⚫ down, so connect straight to `100.64.0.3:25565`.");
+    await lobbyUp("100.64.0.50");
+    expect(await content("status")).toContain("Lobby: 🟢 up. Connect to `mc-lobby` and it sends you to whoever is hosting.");
+  });
+
+  it("a lobby that stopped polling counts as down", async () => {
+    await addWorld("w1");
+    await lobbyUp("100.64.0.50", Date.now() - 1);
+    expect(await content("status")).toContain("Lobby: ⚫ down.");
+  });
+
+  it("/join points at mc-lobby, with its address as a fallback", async () => {
+    await addWorld("w1");
+    await lobbyUp("100.64.0.50");
+    const s = await content("join");
+    expect(s).toContain("3. Add a server with the address `mc-lobby` (once). It sends you to whoever is hosting. If that name doesn't connect, use `100.64.0.50`.");
+  });
+
+  it("/join gives the host's address when the lobby is down", async () => {
+    await addWorld("w1");
+    await hostNow();
+    expect(await content("join")).toContain("3. The lobby is down, so connect straight to `100.64.0.3:25565`.");
   });
 });

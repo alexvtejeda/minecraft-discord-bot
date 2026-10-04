@@ -15,6 +15,7 @@ import { announceStarted, announceStopped } from "../announce";
 import { agentAuth } from "../auth";
 import type { AppEnv } from "../env";
 import { readBody } from "../errors";
+import { lobbyAddress } from "../lobby";
 import { claimLease, heartbeatLease, isHeld, leaseInfo, readLease, releaseLease, requireSession } from "../lease";
 import { beginUpload, commitSnapshot } from "../snapshots";
 import { storageFor } from "../storage";
@@ -39,7 +40,7 @@ agent.get("/manifest", async (c) => {
       ? { rev: latest.rev, sha256: latest.sha256, size: latest.size, url: await storageFor(c.env, c.req.url).getUrl(latest.r2_key) }
       : null,
     lease: isHeld(lease, Date.now()) ? { ...leaseInfo(lease), you: lease.holder_id === c.var.userId } : null,
-    lobby: null,
+    lobby: await lobbyAddress(db, Date.now()),
   };
   return c.json(body);
 });

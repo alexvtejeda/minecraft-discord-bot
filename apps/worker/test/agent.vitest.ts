@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
-import { addUser, call, worldFiles } from "./helpers";
+import { addUser, call, lobbyUp, worldFiles } from "./helpers";
 
 let alex: string;
 let sam: string;
@@ -15,6 +15,12 @@ async function makeWorld(name = "w") {
 const claim = (token: string, hostAddress = "100.64.0.3") => call("POST", "/agent/lease/claim", { token, body: { hostAddress } });
 
 describe("GET /agent/manifest", () => {
+  it("names the lobby while it's up", async () => {
+    await makeWorld();
+    await lobbyUp("100.64.0.50");
+    expect((await call("GET", "/agent/manifest", { token: alex })).body.lobby).toEqual({ address: "100.64.0.50" });
+  });
+
   it("says no world is active, in the spec's words", async () => {
     const r = await call("GET", "/agent/manifest", { token: alex });
     expect(r.status).toBe(404);
