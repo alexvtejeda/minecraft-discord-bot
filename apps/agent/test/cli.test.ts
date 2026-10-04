@@ -70,3 +70,9 @@ test("admin jar add", () => {
   expect(parseCommand(["admin", "jar", "add", "cst", "x.jar", "--side", "server", "--name", "x"])).toMatchObject({ side: "server", name: "x" });
   expect(() => parseCommand(["admin", "jar", "add", "cst"])).toThrow(/Missing <file.jar>/);
 });
+
+test("parses the lobby admin commands", () => {
+  expect(parseCommand(["admin", "lobby", "token", "fedora"])).toEqual({ kind: "admin-lobby-token", name: "fedora" });
+  expect(parseCommand(["admin", "lobby", "release"])).toEqual({ kind: "admin-lobby-release" });
+  expect(() => parseCommand(["admin", "lobby", "token"])).toThrow(/Missing <name>/);
+});

@@ -17,6 +17,8 @@ export type Command =
   | { kind: "admin-token-mint"; discordId: string; name: string }
   | { kind: "admin-lease-release" }
   | { kind: "admin-status" }
+  | { kind: "admin-lobby-token"; name: string }
+  | { kind: "admin-lobby-release" }
   | { kind: "admin-jar-add"; profile: string; file: string; side: string; name?: string; profilesDir: string }
   | { kind: "version" }
   | { kind: "help" };
@@ -66,6 +68,10 @@ Maintainers (need MC_WORKER_URL and MC_ADMIN_SECRET)
       Free a stuck lease.
   admin status
       Show the active world, the lease and everyone with a token.
+  admin lobby token <name>
+      Print a token for the lobby server on the machine called <name> (fedora, pi …).
+  admin lobby release
+      Free the lobby slot when a lobby machine died without stopping.
 
 Options: --profiles <folder> (default: profiles)
 MC_JAVA=<path to java> runs servers with that Java instead of downloading one.`;
@@ -156,6 +162,8 @@ export function parseCommand(argv: string[]): Command {
       if (sub === "jar" && a === "add") {
         return { kind: "admin-jar-add", profile: need(b, "<profile>"), file: need(c, "<file.jar>"), side: values.side ?? "both", name: values.name, profilesDir };
       }
+      if (sub === "lobby" && a === "token") return { kind: "admin-lobby-token", name: need(b, "<name>") };
+      if (sub === "lobby" && a === "release") return { kind: "admin-lobby-release" };
       throw unknown(["admin", sub, a]);
     default:
       throw unknown([group]);

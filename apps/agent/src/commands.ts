@@ -218,6 +218,8 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
     case "admin-lease-release":
     case "admin-status":
     case "admin-jar-add":
+    case "admin-lobby-token":
+    case "admin-lobby-release":
       return runAdmin(cmd, deps);
   }
 }

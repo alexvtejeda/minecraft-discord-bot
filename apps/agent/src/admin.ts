@@ -10,7 +10,7 @@ import { mb } from "./host/deps";
 import { zipSnapshot } from "./host/snapshot";
 import { uploadFile } from "./host/transfer";
 
-type AdminCommand = Extract<Command, { kind: "admin-world-create" | "admin-token-mint" | "admin-lease-release" | "admin-status" | "admin-jar-add" }>;
+type AdminCommand = Extract<Command, { kind: "admin-world-create" | "admin-token-mint" | "admin-lease-release" | "admin-status" | "admin-jar-add" | "admin-lobby-token" | "admin-lobby-release" }>;
 
 function today(ms: number): string {
   const d = new Date(ms);
@@ -87,6 +87,17 @@ export async function runAdmin(cmd: AdminCommand, deps: Deps): Promise<void> {
     case "admin-lease-release": {
       const released = await api.releaseLease();
       deps.log(released ? `Released ${released.name}'s lease (they were hosting at ${released.hostAddress}).` : "Nobody was hosting.");
+      return;
+    }
+    case "admin-lobby-token": {
+      const token = await api.mintLobbyToken(cmd.name);
+      deps.log(`Lobby token for ${cmd.name}: ${token}`);
+      deps.log("It's shown only once. Pass it to scripts/install-lobby.sh --token. Minting again replaces it.");
+      return;
+    }
+    case "admin-lobby-release": {
+      const released = await api.releaseLobby();
+      deps.log(released ? `Released the lobby slot (${released.machine} held it at ${released.address}).` : "No lobby was running.");
       return;
     }
     case "admin-status": {

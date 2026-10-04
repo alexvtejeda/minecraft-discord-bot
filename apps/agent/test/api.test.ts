@@ -3,6 +3,7 @@ import type { Fetch } from "@mc/profile";
 import {
   createAdminApi,
   createAgentApi,
+  createLobbyApi,
   hhmm,
   LeaseHeldError,
   LeaseLostError,
@@ -91,4 +92,15 @@ test("the admin client uses the admin secret and unwraps replies", async () => {
 
 test("hhmm pads local hours and minutes", () => {
   expect(hhmm(new Date(2026, 0, 1, 7, 5).getTime())).toBe("07:05");
+});
+
+test("the lobby client uses /lobby routes, and a refusal becomes a plain message", async () => {
+  const refused = "The lobby is already running on pi (heard from it just now). Stop it there first, or run `mc-host admin lobby release`.";
+  const { fetch, seen } = fakeFetch((url) =>
+    url.endsWith("/lobby/claim") ? json({ error: "lease_held", message: refused }, 409) : json({ host: null, expiresAt: 5 }),
+  );
+  const api = createLobbyApi({ workerUrl: "https://w.test/", token: "tok", fetch });
+  expect(await api.poll("s".repeat(16))).toEqual({ host: null, expiresAt: 5 });
+  expect(seen[0]).toMatchObject({ url: "https://w.test/lobby/poll", method: "POST", auth: "Bearer tok", body: { sessionId: "s".repeat(16) } });
+  await expect(api.claim({ address: "100.64.0.50", machine: "fedora" })).rejects.toThrow(refused);
 });

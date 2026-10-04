@@ -9,6 +9,10 @@ import {
   HeartbeatResponseSchema,
   JarInfoSchema,
   JarUploadResponseSchema,
+  LobbyClaimResponseSchema,
+  LobbyLatestResponseSchema,
+  LobbyPollResponseSchema,
+  LobbyReleaseResponseSchema,
   ManifestSchema,
   MintTokenResponseSchema,
   OkSchema,
@@ -23,8 +27,14 @@ import {
   type ImportUrlRequest,
   type JarUploadResponse,
   type LeaseInfo,
+  type LobbyClaimRequest,
+  type LobbyClaimResponse,
+  type LobbyCommitRequest,
+  type LobbyPollResponse,
+  type LobbyUploadUrlRequest,
   type Manifest,
   type MintTokenRequest,
+  type SnapshotRef,
   type UploadTarget,
   type UploadUrlRequest,
 } from "@mc/protocol";
@@ -128,12 +138,39 @@ export function createAgentApi(o: { workerUrl: string; token: string; fetch: Fet
   };
 }
 
+export interface LobbyApi {
+  claim(req: LobbyClaimRequest): Promise<LobbyClaimResponse>;
+  poll(sessionId: string): Promise<LobbyPollResponse>;
+  release(sessionId: string): Promise<void>;
+  backupUrl(req: LobbyUploadUrlRequest): Promise<UploadTarget>;
+  /** Returns the committed rev. */
+  commitBackup(req: LobbyCommitRequest): Promise<number>;
+  latestBackup(): Promise<SnapshotRef | null>;
+}
+
+export function createLobbyApi(o: { workerUrl: string; token: string; fetch: Fetch }): LobbyApi {
+  const c: Client = { fetch: o.fetch, base: o.workerUrl.replace(/\/+$/, ""), secret: o.token };
+  return {
+    claim: (req) => request(c, "POST", "/lobby/claim", LobbyClaimResponseSchema, req),
+    poll: (sessionId) => request(c, "POST", "/lobby/poll", LobbyPollResponseSchema, { sessionId }),
+    release: async (sessionId) => {
+      await request(c, "POST", "/lobby/release", OkSchema, { sessionId });
+    },
+    backupUrl: (req) => request(c, "POST", "/lobby/backup/upload-url", UploadTargetSchema, req),
+    commitBackup: async (req) => (await request(c, "POST", "/lobby/backup/commit", CommitResponseSchema, req)).rev,
+    latestBackup: async () => (await request(c, "GET", "/lobby/backup/latest", LobbyLatestResponseSchema)).latest,
+  };
+}
+
 export interface AdminApi {
   createWorld(req: CreateWorldRequest): Promise<CreateWorldResponse>;
   importUrl(worldId: string, req: ImportUrlRequest): Promise<UploadTarget>;
   importCommit(worldId: string, req: ImportCommitRequest): Promise<number>;
   mintToken(req: MintTokenRequest): Promise<string>;
   releaseLease(): Promise<LeaseInfo | null>;
+  mintLobbyToken(name: string): Promise<string>;
+  /** Who held the lobby slot, or null if no lobby was running. */
+  releaseLobby(): Promise<{ machine: string; address: string } | null>;
   status(): Promise<AdminStatus>;
   putJar(o: { bytes: Uint8Array; sha512: string; filename: string; minecraft: string; javaMajor: number }): Promise<JarUploadResponse>;
   /** Null when no jar with that sha512 was uploaded. */
@@ -149,6 +186,8 @@ export function createAdminApi(o: { workerUrl: string; secret: string; fetch: Fe
       (await request(c, "POST", `/admin/worlds/${encodeURIComponent(id)}/import-commit`, CommitResponseSchema, req)).rev,
     mintToken: async (req) => (await request(c, "POST", "/admin/tokens", MintTokenResponseSchema, req)).token,
     releaseLease: async () => (await request(c, "POST", "/admin/lease/release", ReleaseResponseSchema, {})).released,
+    mintLobbyToken: async (name) => (await request(c, "POST", "/admin/lobby/token", MintTokenResponseSchema, { name })).token,
+    releaseLobby: async () => (await request(c, "POST", "/admin/lobby/release", LobbyReleaseResponseSchema, {})).released,
     status: () => request(c, "GET", "/admin/status", AdminStatusSchema),
     putJar: (o) =>
       request(
