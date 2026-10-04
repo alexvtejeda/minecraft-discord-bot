@@ -84,6 +84,7 @@ export async function manifestFor(
     latest?: { rev: number; sha256: string; size: number } | null;
     pregenDone?: boolean;
     lease?: (LeaseInfo & { you: boolean }) | null;
+    lobby?: { address: string } | null;
     profile?: Record<string, unknown>;
   } = {},
 ): Promise<Manifest> {
@@ -95,6 +96,7 @@ export async function manifestFor(
     pregenDone: o.pregenDone ?? false,
     latest: o.latest ? { ...o.latest, url: `https://r2.test/rev${o.latest.rev}.zip` } : null,
     lease: o.lease ?? null,
+    lobby: o.lobby ?? null,
   };
 }
 

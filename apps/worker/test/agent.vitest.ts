@@ -36,6 +36,7 @@ describe("GET /agent/manifest", () => {
       pregenDone: false,
       latest: null,
       lease: null,
+      lobby: null,
     });
   });
 

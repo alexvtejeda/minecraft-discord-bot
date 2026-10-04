@@ -39,6 +39,7 @@ agent.get("/manifest", async (c) => {
       ? { rev: latest.rev, sha256: latest.sha256, size: latest.size, url: await storageFor(c.env, c.req.url).getUrl(latest.r2_key) }
       : null,
     lease: isHeld(lease, Date.now()) ? { ...leaseInfo(lease), you: lease.holder_id === c.var.userId } : null,
+    lobby: null,
   };
   return c.json(body);
 });

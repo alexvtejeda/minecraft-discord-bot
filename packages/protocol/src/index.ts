@@ -54,6 +54,8 @@ export const ManifestSchema = z.object({
   latest: SnapshotRefSchema.nullable(),
   /** Null when nobody holds the lease or it has expired. */
   lease: LeaseInfoSchema.extend({ you: z.boolean() }).nullable(),
+  /** Null when no lobby is running. Older Workers leave it out. */
+  lobby: z.object({ address: z.string() }).nullable().default(null),
 });
 export type Manifest = z.infer<typeof ManifestSchema>;
 
@@ -156,3 +158,39 @@ export const JarInfoSchema = z.object({
 export type JarInfoBody = z.infer<typeof JarInfoSchema>;
 export const JarUploadResponseSchema = z.object({ jar: JarInfoSchema, created: z.boolean() });
 export type JarUploadResponse = z.infer<typeof JarUploadResponseSchema>;
+
+export const LobbyNameSchema = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]{0,31}$/, "must be up to 32 lowercase letters, digits and dashes, like fedora or pi");
+export const LobbyTokenRequestSchema = z.object({ name: LobbyNameSchema });
+export type LobbyTokenRequest = z.infer<typeof LobbyTokenRequestSchema>;
+export const LobbyClaimRequestSchema = z.object({
+  address: z.string().min(1).max(64),
+  /** The machine's own name, shown to a second lobby that's refused. */
+  machine: z.string().min(1).max(64),
+  /** This machine's last session, so a restart within the expiry gets the slot back. */
+  previousSessionId: SessionId.optional(),
+});
+export type LobbyClaimRequest = z.infer<typeof LobbyClaimRequestSchema>;
+export const LobbyClaimResponseSchema = z.object({ sessionId: SessionId, expiresAt: z.number() });
+export type LobbyClaimResponse = z.infer<typeof LobbyClaimResponseSchema>;
+export const LobbyHostSchema = z.object({ name: z.string(), address: z.string(), world: z.string(), minecraft: z.string() });
+export type LobbyHost = z.infer<typeof LobbyHostSchema>;
+export const LobbyPollResponseSchema = z.object({ host: LobbyHostSchema.nullable(), expiresAt: z.number() });
+export type LobbyPollResponse = z.infer<typeof LobbyPollResponseSchema>;
+export const LobbyUploadUrlRequestSchema = z.object({ sessionId: SessionId, size: Size, sha256: Sha256Schema });
+export type LobbyUploadUrlRequest = z.infer<typeof LobbyUploadUrlRequestSchema>;
+export const LobbyCommitRequestSchema = z.object({
+  sessionId: SessionId,
+  rev: PositiveRev,
+  key: z.string().min(1),
+  size: Size,
+  sha256: Sha256Schema,
+});
+export type LobbyCommitRequest = z.infer<typeof LobbyCommitRequestSchema>;
+export const LobbyLatestResponseSchema = z.object({ latest: SnapshotRefSchema.nullable() });
+export type LobbyLatestResponse = z.infer<typeof LobbyLatestResponseSchema>;
+export const LobbyReleaseResponseSchema = z.object({
+  released: z.object({ machine: z.string(), address: z.string() }).nullable(),
+});
+export type LobbyReleaseResponse = z.infer<typeof LobbyReleaseResponseSchema>;

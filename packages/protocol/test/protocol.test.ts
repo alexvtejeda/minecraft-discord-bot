@@ -3,6 +3,8 @@ import {
   CommitRequestSchema,
   CreateWorldRequestSchema,
   ErrorBodySchema,
+  LobbyClaimRequestSchema,
+  LobbyTokenRequestSchema,
   ManifestSchema,
   MintTokenRequestSchema,
   Sha256Schema,
@@ -58,4 +60,24 @@ test("error bodies carry a known code and an optional holder", () => {
 test("discord ids are digits", () => {
   expect(MintTokenRequestSchema.safeParse({ discordId: "123456789012345678", name: "Alex" }).success).toBe(true);
   expect(MintTokenRequestSchema.safeParse({ discordId: "alex", name: "Alex" }).success).toBe(false);
+});
+
+test("a manifest from an older Worker has no lobby", () => {
+  const m = ManifestSchema.parse({
+    world: { id: "w", name: "w", minecraft: "26.3" },
+    profile: {},
+    lockfile: {},
+    pregenDone: false,
+    latest: null,
+    lease: null,
+  });
+  expect(m.lobby).toBeNull();
+  expect(ManifestSchema.parse({ ...m, lobby: { address: "100.64.0.50" } }).lobby).toEqual({ address: "100.64.0.50" });
+});
+
+test("lobby names are slugs, and a claim needs an address and a machine", () => {
+  expect(LobbyTokenRequestSchema.safeParse({ name: "fedora" }).success).toBe(true);
+  expect(LobbyTokenRequestSchema.safeParse({ name: "Fedora Box" }).success).toBe(false);
+  expect(LobbyClaimRequestSchema.safeParse({ address: "100.64.0.50", machine: "fedora" }).success).toBe(true);
+  expect(LobbyClaimRequestSchema.safeParse({ address: "", machine: "fedora" }).success).toBe(false);
 });
