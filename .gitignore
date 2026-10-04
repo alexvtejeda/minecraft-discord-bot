@@ -25,3 +25,6 @@ VanillaTweaks_*/
 paper/lobby-bridge/.gradle/
 paper/lobby-bridge/.gradle-home/
 paper/lobby-bridge/build/
+
+# Lobby map source (lives in the Docker volume and R2, never in git)
+/cst-lobby/
