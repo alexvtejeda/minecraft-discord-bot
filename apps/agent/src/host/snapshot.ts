@@ -53,8 +53,13 @@ export async function sha256File(path: string): Promise<string> {
   return h.digest("hex");
 }
 
-/** Stream the snapshot paths of serverDir into outFile. Never holds the whole zip in memory. */
-export async function zipSnapshot(serverDir: string, levelName: string, outFile: string): Promise<{ sha256: string; size: number }> {
+/** Stream every file under `tops` (paths relative to root) into outFile. Never holds the whole zip in memory. */
+export async function zipTree(
+  root: string,
+  tops: string[],
+  outFile: string,
+  skip: (rel: string) => boolean = () => false,
+): Promise<{ sha256: string; size: number }> {
   await mkdir(dirname(outFile), { recursive: true });
   const sink = Bun.file(outFile).writer();
   const hasher = new Bun.CryptoHasher("sha256");
@@ -69,12 +74,12 @@ export async function zipSnapshot(serverDir: string, levelName: string, outFile:
     size += chunk.length;
     sink.write(chunk);
   });
-  for (const top of snapshotPaths(levelName)) {
-    for await (const rel of walk(serverDir, top)) {
-      if (SKIP.has(basename(rel))) continue;
+  for (const top of tops) {
+    for await (const rel of walk(root, top)) {
+      if (SKIP.has(basename(rel)) || skip(rel)) continue;
       const entry = new ZlibDeflateEntry(rel);
       zip.add(entry);
-      for await (const chunk of Bun.file(join(serverDir, rel)).stream()) entry.push(chunk);
+      for await (const chunk of Bun.file(join(root, rel)).stream()) entry.push(chunk);
       entry.push(new Uint8Array(0), true);
     }
   }
@@ -84,40 +89,52 @@ export async function zipSnapshot(serverDir: string, levelName: string, outFile:
   return { sha256: hasher.digest("hex"), size };
 }
 
+/** Stream the snapshot paths of serverDir into outFile. Never holds the whole zip in memory. */
+export async function zipSnapshot(serverDir: string, levelName: string, outFile: string): Promise<{ sha256: string; size: number }> {
+  return zipTree(serverDir, snapshotPaths(levelName), outFile);
+}
+
 export async function clearSnapshotPaths(serverDir: string, levelName: string): Promise<void> {
   for (const p of snapshotPaths(levelName)) await rm(join(serverDir, p), { recursive: true, force: true });
 }
 
-/** Directory entries return null; anything outside the snapshot paths is refused. */
-function entryPath(name: string, levelName: string): string | null {
+interface ExtractOptions {
+  /** What the zip is, for messages: "world", "lobby backup". */
+  what: string;
+  /** Whether an entry may live under this first path segment. */
+  allowTop: (top: string) => boolean;
+  /** Runs after the checksum passes and before anything is written. */
+  clear: () => Promise<void>;
+}
+
+/** Directory entries return null; unsafe paths and disallowed top-level names are refused. */
+function entryPath(name: string, o: ExtractOptions): string | null {
   if (name.endsWith("/")) return null;
   const parts = name.split("/");
-  const unsafe =
-    parts.some((p) => p === "" || p === "." || p === ".." || p.includes("\\") || p.includes(":")) ||
-    !snapshotPaths(levelName).includes(parts[0]!);
-  if (unsafe) throw new UserError(`The world download contains an unsafe path ("${name}"), so it wasn't unpacked. Tell a maintainer.`);
+  const unsafe = parts.some((p) => p === "" || p === "." || p === ".." || p.includes("\\") || p.includes(":")) || !o.allowTop(parts[0]!);
+  if (unsafe) throw new UserError(`The ${o.what} download contains an unsafe path ("${name}"), so it wasn't unpacked. Tell a maintainer.`);
   return name;
 }
 
-/** Check the sha256 first; only then replace the snapshot paths in serverDir with the zip's contents. */
-export async function extractSnapshot(zipFile: string, serverDir: string, levelName: string, expectedSha256: string): Promise<void> {
+/** Check the sha256 first; only then clear and unpack the zip into destDir. */
+export async function extractZip(zipFile: string, destDir: string, expectedSha256: string, o: ExtractOptions): Promise<void> {
   if ((await sha256File(zipFile)) !== expectedSha256) {
-    throw new ChecksumError("The downloaded world is damaged (its sha256 doesn't match).");
+    throw new ChecksumError(`The downloaded ${o.what} is damaged (its sha256 doesn't match).`);
   }
-  await clearSnapshotPaths(serverDir, levelName);
-  await mkdir(serverDir, { recursive: true });
+  await o.clear();
+  await mkdir(destDir, { recursive: true });
   const writes: Promise<unknown>[] = [];
   let failed: unknown = null;
   const unzip = new Unzip((file) => {
     let rel: string | null;
     try {
-      rel = entryPath(file.name, levelName);
+      rel = entryPath(file.name, o);
     } catch (err) {
       failed = err;
       return;
     }
     if (rel === null) return;
-    const dest = join(serverDir, rel);
+    const dest = join(destDir, rel);
     const chunks: Uint8Array[] = [];
     file.ondata = (err, chunk, final) => {
       if (err) {
@@ -137,4 +154,13 @@ export async function extractSnapshot(zipFile: string, serverDir: string, levelN
   if (!failed) unzip.push(new Uint8Array(0), true);
   await Promise.all(writes);
   if (failed) throw failed;
+}
+
+/** Check the sha256 first; only then replace the snapshot paths in serverDir with the zip's contents. */
+export async function extractSnapshot(zipFile: string, serverDir: string, levelName: string, expectedSha256: string): Promise<void> {
+  return extractZip(zipFile, serverDir, expectedSha256, {
+    what: "world",
+    allowTop: (top) => snapshotPaths(levelName).includes(top),
+    clear: () => clearSnapshotPaths(serverDir, levelName),
+  });
 }
