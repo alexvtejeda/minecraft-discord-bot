@@ -63,6 +63,7 @@ Guide: [docs/setup/local-jars.md](docs/setup/local-jars.md)
 
 ## Phase 5: Lobby
 Design: [docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md](docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md)
+Setup guide: [docs/setup/phase-5.md](docs/setup/phase-5.md)
 - [ ] Worker: lobby slot, `lobby`-scoped tokens, lobby backups in R2, lobby in the manifest, `/status` and `/join`
 - [ ] `lobby-bridge` Paper plugin: countdown, `/stay`, `/play`, transfer on join
 - [ ] `mc-host lobby`: Paper 26.3, restore and backup, polls the Worker, drives the plugin on stdin

@@ -1,0 +1,39 @@
+# Installed to ~/.local/share/mc-lobby/compose.yml by scripts/install-lobby.sh.
+# Like the hosting setup, the lobby shares its Tailscale sidecar's network namespace, so port
+# 25565 is reachable only on the Minecraft tailnet, as "mc-lobby". Both restart on their own.
+name: mc-lobby
+services:
+  tailscale:
+    image: tailscale/tailscale:stable
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_HOSTNAME: mc-lobby
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_EXTRA_ARGS: --accept-dns=false
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add: [NET_ADMIN, NET_RAW]
+    restart: unless-stopped
+  agent:
+    image: mc-lobby:local
+    container_name: mc-lobby-agent
+    network_mode: service:tailscale
+    depends_on: [tailscale]
+    init: true
+    stdin_open: true
+    tty: true
+    environment:
+      MC_WORKER_URL: ${MC_WORKER_URL}
+      MC_TOKEN: ${MC_TOKEN}
+      MC_ACCEPT_EULA: ${MC_ACCEPT_EULA}
+      MC_LOBBY_MACHINE: ${MC_LOBBY_MACHINE}
+    volumes:
+      - data:/data
+    stop_grace_period: 5m
+    restart: unless-stopped
+volumes:
+  tailscale-state: {}
+  data: {}
