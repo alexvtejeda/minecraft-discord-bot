@@ -131,7 +131,7 @@ async function cmdResolve(cmd: Extract<Command, { kind: "resolve" }>, deps: Deps
   );
   for (const w of warnings) deps.log(`warning: ${w}`);
   const ready = waiting.filter((w) => w.ready).map((w) => w.slug);
-  const still = waiting.filter((w) => !w.ready).map((w) => w.slug);
+  const still = waiting.filter((w) => !w.ready).map((w) => (w.blockedBy?.length ? `${w.slug} (needs ${w.blockedBy.join(", ")})` : w.slug));
   if (ready.length) deps.log(`Now available: ${ready.join(", ")}. Run "mc-host profile resolve ${cmd.name} --add-ready" to add them.`);
   if (still.length) deps.log(`Still waiting: ${still.join(", ")}.`);
 }
