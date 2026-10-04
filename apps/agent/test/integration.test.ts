@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Subprocess } from "bun";
-import { createAdminApi, createAgentApi, LeaseHeldError } from "../src/host/api";
+import { createAdminApi, createAgentApi, createLobbyApi, LeaseHeldError } from "../src/host/api";
+import { restoreLobby, zipLobby } from "../src/lobby/folder";
 import { AUTOSAVE_MS } from "../src/host/deps";
 import { hostSession } from "../src/host/session";
 import { serverDirFor } from "../src/host/state";
@@ -96,4 +97,43 @@ test.skipIf(!RUN)("two hosts hand the world over through the real Worker", async
   const status = await admin.status();
   expect(status.world).toMatchObject({ id: world.id, latestRev: 3 });
   expect(status.lease).toBeNull();
+}, 60_000);
+
+test.skipIf(!RUN)("a lobby claims its slot, sees the host, and backs up through the real Worker", async () => {
+  const admin = createAdminApi({ workerUrl: BASE, secret: "itest", fetch });
+  const lobbyToken = await admin.mintLobbyToken("itest");
+  const alex = await admin.mintToken({ discordId: "100000000000000003", name: "Alex" });
+  const { profile, lockfile } = await worldFiles();
+  const world = await admin.createWorld({ name: `itest-lobby-${Date.now()}`, profile, lockfile, replace: true });
+
+  const lobby = createLobbyApi({ workerUrl: BASE, token: lobbyToken, fetch });
+  const { sessionId } = await lobby.claim({ address: "100.64.0.50", machine: "itest" });
+  expect((await lobby.poll(sessionId)).host).toBeNull();
+  await expect(lobby.claim({ address: "100.64.0.51", machine: "other" })).rejects.toThrow("The lobby is already running on itest");
+
+  const host = createAgentApi({ workerUrl: BASE, token: alex, fetch });
+  const lease = await host.claim("100.64.0.3");
+  expect((await lobby.poll(sessionId)).host).toEqual({ name: "Alex", address: "100.64.0.3", world: world.name, minecraft: "26.3" });
+  expect((await host.manifest()).lobby).toEqual({ address: "100.64.0.50" });
+  await host.release(lease.sessionId);
+
+  const work = mkdtempSync(join(tmpdir(), "mc-itest-lobby-"));
+  mkdirSync(join(work, "src", "world"), { recursive: true });
+  writeFileSync(join(work, "src", "world", "level.dat"), "lobby build");
+  writeFileSync(join(work, "src", "server.properties"), "motd=Lobby\n");
+  const zip = join(work, "backup.zip");
+  const zipped = await zipLobby(join(work, "src"), zip);
+  const target = await lobby.backupUrl({ sessionId, ...zipped });
+  await uploadFile(fetch, target, zip);
+  const rev = await lobby.commitBackup({ sessionId, rev: target.rev, key: target.key, ...zipped });
+
+  const latest = await lobby.latestBackup();
+  expect(latest).toMatchObject({ rev, sha256: zipped.sha256 });
+  const back = join(work, "download.zip");
+  await downloadTo(fetch, latest!.url, back);
+  await restoreLobby(back, join(work, "restored"), latest!.sha256);
+  expect(readFileSync(join(work, "restored", "world", "level.dat"), "utf8")).toBe("lobby build");
+
+  await lobby.release(sessionId);
+  expect(await admin.releaseLobby()).toBeNull();
 }, 60_000);
