@@ -55,9 +55,9 @@ export const MARKER: ServerMarker = { profile: "test", minecraft: "26.3", javaMa
 export const DONE_LINE = '[Server thread/INFO]: Done (1.234s)! For help, type "help"';
 export const CHUNKY_DONE_LINE = "[Server thread/INFO]: [Chunky] Task finished for minecraft:overworld. Processed: 100 chunks (100.00%)";
 
-export async function until(cond: () => boolean, ms = 5_000): Promise<void> {
+export async function until(cond: () => boolean | Promise<boolean>, ms = 5_000): Promise<void> {
   for (const end = Date.now() + ms; Date.now() < end; ) {
-    if (cond()) return;
+    if (await cond()) return;
     await Bun.sleep(5);
   }
   throw new Error("Timed out waiting for a condition");

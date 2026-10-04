@@ -52,6 +52,8 @@ test("a full session: Done, pre-generation, heartbeat, autosave, then a clean st
 
   h.timers.fire(AUTOSAVE_MS);
   await until(() => h.events.includes("api:commit 1"));
+  // The state file is written just after the commit returns.
+  await until(async () => (await readState(h.deps.dataDir))?.baseRev === 1);
   expect(idx(h.events, "server:save-off")).toBeLessThan(idx(h.events, "server:save-all flush"));
   expect(idx(h.events, "server:save-on")).toBeLessThan(idx(h.events, "api:uploadUrl 0"));
   expect(await readState(h.deps.dataDir)).toEqual({ worldId: "w1", baseRev: 1, dirty: true });
