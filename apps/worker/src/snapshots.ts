@@ -25,10 +25,13 @@ export async function beginUpload(
   return { rev, key, ...(await storageFor(env, requestUrl).putTarget(key, o.sha256)) };
 }
 
-async function verifyObject(bucket: R2Bucket, o: { worldId: string; rev: number; key: string; size: number; sha256: string }) {
-  if (!o.key.startsWith(`worlds/${o.worldId}/${o.rev}-`) || !o.key.endsWith(".zip")) {
-    throw new ApiError("bad_request", "That upload key doesn't belong to this world and rev.");
-  }
+/** The object at `key` sits under `prefix`, arrived complete, and matches its sha256. */
+export async function verifyUpload(
+  bucket: R2Bucket,
+  o: { prefix: string; key: string; size: number; sha256: string },
+  wrongKey: string,
+): Promise<void> {
+  if (!o.key.startsWith(o.prefix) || !o.key.endsWith(".zip")) throw new ApiError("bad_request", wrongKey);
   const head = await bucket.head(o.key);
   if (!head) throw new ApiError("upload_missing", "The upload didn't reach storage. Upload it again.");
   if (head.size !== o.size) {
@@ -57,7 +60,11 @@ export async function commitSnapshot(
     sessionId: string | null;
   },
 ): Promise<void> {
-  await verifyObject(env.BUCKET, o);
+  await verifyUpload(
+    env.BUCKET,
+    { prefix: `worlds/${o.worldId}/${o.rev}-`, key: o.key, size: o.size, sha256: o.sha256 },
+    "That upload key doesn't belong to this world and rev.",
+  );
   const db = env.DB;
   const guard =
     o.sessionId === null

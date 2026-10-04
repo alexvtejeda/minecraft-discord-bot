@@ -1,6 +1,8 @@
 import { sha256Hex } from "@mc/profile";
+import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
+import { app } from "../src/index";
 import { LOBBY_MS } from "../src/lobby";
 import { addLobby, addUser, addWorld, call, hostSince } from "./helpers";
 
@@ -87,5 +89,63 @@ describe("the lobby slot", () => {
 
   it("a hosting token can't use the lobby API", async () => {
     expect((await claimAs({ token: alex })).status).toBe(401);
+  });
+});
+
+/** upload-url, then PUT through the dev R2 proxy. Commit is left to the test. */
+async function backup(sessionId: string, data: string) {
+  const sha256 = await sha256Hex(data);
+  const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId, size: data.length, sha256 } });
+  expect(t.status).toBe(200);
+  const ctx = createExecutionContext();
+  await app.request(t.body.url, { method: "PUT", headers: t.body.headers, body: data }, env, ctx);
+  await waitOnExecutionContext(ctx);
+  return {
+    target: t.body,
+    commit: () =>
+      call("POST", "/lobby/backup/commit", { token: lobby, body: { sessionId, rev: t.body.rev, key: t.body.key, size: data.length, sha256 } }),
+  };
+}
+
+describe("lobby backups", () => {
+  it("backs up, then hands out the latest", async () => {
+    const s = (await claimAs()).body.sessionId;
+    expect((await call("GET", "/lobby/backup/latest", { token: lobby })).body).toEqual({ latest: null });
+    const b = await backup(s, "first");
+    expect(b.target.key).toMatch(/^lobby\/1-[0-9a-f-]+\.zip$/);
+    expect((await b.commit()).body).toEqual({ rev: 1 });
+    const latest = (await call("GET", "/lobby/backup/latest", { token: lobby })).body.latest;
+    expect(latest).toMatchObject({ rev: 1, size: 5, sha256: await sha256Hex("first") });
+    expect(latest.url).toBe(`http://localhost/dev/r2/${b.target.key}`);
+  });
+
+  it("a retried commit is fine; a session that lost the slot can't back up", async () => {
+    const s = (await claimAs()).body.sessionId;
+    const b = await backup(s, "first");
+    await b.commit();
+    expect((await b.commit()).body).toEqual({ rev: 1 });
+    await env.DB.prepare("UPDATE lobby_slot SET expires_at = ? WHERE id = 1").bind(Date.now() - 1).run();
+    await claimAs({ machine: "pi" });
+    const r = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, size: 3, sha256: await sha256Hex("old") } });
+    expect(r.status).toBe(409);
+    expect(r.body.error).toBe("lease_lost");
+  });
+
+  it("refuses a commit whose upload never arrived", async () => {
+    const s = (await claimAs()).body.sessionId;
+    const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, size: 3, sha256: await sha256Hex("abc") } });
+    const r = await call("POST", "/lobby/backup/commit", {
+      token: lobby,
+      body: { sessionId: s, rev: t.body.rev, key: t.body.key, size: 3, sha256: await sha256Hex("abc") },
+    });
+    expect(r.body.error).toBe("upload_missing");
+  });
+
+  it("keeps the last 3 backups", async () => {
+    const s = (await claimAs()).body.sessionId;
+    for (let i = 1; i <= 4; i++) await (await backup(s, `backup ${i}`)).commit();
+    const revs = (await env.DB.prepare("SELECT rev FROM lobby_backups ORDER BY rev").all<{ rev: number }>()).results.map((r) => r.rev);
+    expect(revs).toEqual([2, 3, 4]);
+    expect((await env.BUCKET.list({ prefix: "lobby/" })).objects).toHaveLength(3);
   });
 });
