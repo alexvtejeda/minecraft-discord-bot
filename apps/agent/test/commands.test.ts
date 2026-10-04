@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseLock } from "@mc/profile";
-import { FakeModrinth, fakeFabric, fakeMojang } from "../../../packages/profile/test/fakes";
+import { dep, FakeModrinth, fakeFabric, fakeMojang } from "../../../packages/profile/test/fakes";
 import { runCommand, type Deps } from "../src/commands";
 
 let dir: string;
@@ -148,4 +148,16 @@ test("resolve looks uploaded jars up through the admin API", async () => {
 test("resolve without admin config names what's missing", async () => {
   writeProfile({ mods: [{ jar: "dragonbond", filename: "d.jar", sha512: "b".repeat(128), side: "both" }], waiting: [] });
   await expect(runCommand({ kind: "resolve", name: "test", addReady: false, profilesDir: dir }, { ...deps, env: {} })).rejects.toThrow(/MC_ADMIN_SECRET/);
+});
+
+test("resolve says which dependency a waiting mod is blocked on, and --add-ready leaves it", async () => {
+  const mr = deps.clients!.modrinth as FakeModrinth;
+  mr.add("qsl", [{ game_versions: ["1.20.1"] }]);
+  mr.add("more-mobs", [{ dependencies: [dep("QSL")] }]);
+  writeProfile({ waiting: ["more-mobs"] });
+  await runCommand({ kind: "resolve", name: "test", addReady: false, profilesDir: dir }, deps);
+  expect(lines.join("\n")).toContain("Still waiting: more-mobs (needs qsl).");
+  expect(lines.join("\n")).not.toContain("Now available");
+  await runCommand({ kind: "resolve", name: "test", addReady: true, profilesDir: dir }, deps);
+  expect(JSON.parse(readFileSync(join(dir, "test.json"), "utf8")).waiting).toEqual(["more-mobs"]);
 });

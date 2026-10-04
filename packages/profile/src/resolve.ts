@@ -32,6 +32,8 @@ export interface WaitingStatus {
   slug: string;
   ready: boolean;
   suggestedSide?: Side;
+  /** Required dependencies with no build for this Minecraft version yet. Only set when they're why it isn't ready. */
+  blockedBy?: string[];
 }
 
 export interface ResolveResult {
@@ -192,10 +194,36 @@ export async function checkWaiting(
       statuses.push({ slug, ready: false });
       continue;
     }
-    const ready = pickVersion(await modrinth.getVersions(project.id, profile.minecraft)) !== null;
-    statuses.push(ready ? { slug, ready, suggestedSide: sideFromMetadata(project) } : { slug, ready });
+    const version = pickVersion(await modrinth.getVersions(project.id, profile.minecraft));
+    if (!version) {
+      statuses.push({ slug, ready: false });
+      continue;
+    }
+    const blockedBy = await missingDependencies(version, profile.minecraft, modrinth);
+    statuses.push(blockedBy.length ? { slug, ready: false, blockedBy } : { slug, ready: true, suggestedSide: sideFromMetadata(project) });
   }
   return { statuses, warnings };
+}
+
+/**
+ * A mod's build isn't usable until its required dependencies have one too (one level: the
+ * dependencies' own dependencies are checked when the mod is resolved).
+ */
+async function missingDependencies(version: MrVersion, minecraft: string, modrinth: ModrinthClient): Promise<string[]> {
+  const missing: string[] = [];
+  for (const d of version.dependencies) {
+    if (d.dependency_type !== "required") continue;
+    const pinned = d.version_id ? await modrinth.getVersion(d.version_id) : null;
+    const projectId = d.project_id ?? pinned?.project_id ?? null;
+    const project = projectId ? await modrinth.getProject(projectId) : null;
+    if (!project) {
+      missing.push(d.file_name ?? projectId ?? "a file that isn't on Modrinth");
+      continue;
+    }
+    const available = pinned ? pinned.game_versions.includes(minecraft) : pickVersion(await modrinth.getVersions(project.id, minecraft)) !== null;
+    if (!available) missing.push(project.slug);
+  }
+  return missing;
 }
 
 export async function checkAvailability(

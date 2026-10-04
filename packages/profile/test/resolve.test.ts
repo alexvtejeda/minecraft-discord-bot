@@ -183,6 +183,23 @@ describe("resolveProfile", () => {
     expect(warnings).toContain('Waiting mod "ghost" isn\'t on Modrinth. Check the spelling.');
   });
 
+  test("a waiting mod stays waiting while a required dependency has no build, and names it", async () => {
+    const mr = new FakeModrinth();
+    mr.add("lithium");
+    mr.add("fabric-api");
+    mr.add("qsl", [{ game_versions: ["1.20.1"] }]);
+    mr.add("modmenu", [{ game_versions: ["1.20.1"] }]);
+    mr.add("more-mobs", [{ dependencies: [dep("FABRIC-API"), dep("QSL"), dep("MODMENU", "optional")] }]);
+    mr.add("needs-jar", [{ dependencies: [{ project_id: null, version_id: null, file_name: "secret.jar", dependency_type: "required" }] }]);
+    mr.add("pinned", [{ dependencies: [{ project_id: null, version_id: "qsl-v1", file_name: null, dependency_type: "required" }] }]);
+    const { waiting } = await resolveProfile(makeProfile({ waiting: ["more-mobs", "needs-jar", "pinned"] }), deps(mr));
+    expect(waiting).toEqual([
+      { slug: "more-mobs", ready: false, blockedBy: ["qsl"] },
+      { slug: "needs-jar", ready: false, blockedBy: ["secret.jar"] },
+      { slug: "pinned", ready: false, blockedBy: ["qsl"] },
+    ]);
+  });
+
   test("the lockfile is deterministic and round-trips", async () => {
     const mr = new FakeModrinth();
     mr.add("zeta");
