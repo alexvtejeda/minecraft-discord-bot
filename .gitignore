@@ -28,3 +28,5 @@ paper/lobby-bridge/build/
 
 # Lobby map source (lives in the Docker volume and R2, never in git)
 /cst-lobby/
+# Partial downloads
+*.part
