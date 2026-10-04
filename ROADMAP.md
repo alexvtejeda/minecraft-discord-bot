@@ -61,10 +61,13 @@ Guide: [docs/setup/local-jars.md](docs/setup/local-jars.md)
 - [x] `check-packs` boots mods-only profiles and names missing dependencies
 - [ ] Release v0.3.0, deploy, add the CurseForge jars to `cst`
 
-## Phase 5: Proxy lobby (new feature, needs brainstorming)
-- [ ] A process that runs 24/7 with a fixed minecraft superflat world I can customize with [MoveMeNow](https://www.spigotmc.org/resources/movemenow.17/) plugin
-- [ ] Should be shown when there is no host running the server
-- [ ] Once a host is running  the real world, the user should be auto-redirected, we can use the AutoReconnect plugin
+## Phase 5: Lobby
+Design: [docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md](docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md)
+- [ ] Worker: lobby slot, `lobby`-scoped tokens, lobby backups in R2, lobby in the manifest, `/status` and `/join`
+- [ ] `lobby-bridge` Paper plugin: countdown, `/stay`, `/play`, transfer on join
+- [ ] `mc-host lobby`: Paper 26.3, restore and backup, polls the Worker, drives the plugin over RCON
+- [ ] Hosts: `accepts-transfers=true`, send players back to the lobby on stop
+- [ ] `install.sh --lobby`, `linux-arm64` builds, setup guide; run it on Fedora
 
 ## Phase 6: Update watcher
 - [ ] Cron job that polls Mojang's version manifest for new releases
