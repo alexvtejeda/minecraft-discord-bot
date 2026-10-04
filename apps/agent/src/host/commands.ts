@@ -10,7 +10,7 @@ import { tailnetAddress } from "./address";
 import { createAgentApi, hhmm } from "./api";
 import { loadHostConfig, type HostConfig } from "./config";
 import { javaCommand, spawnProcess } from "./console";
-import type { SessionDeps } from "./deps";
+import { realTimers, type SessionDeps } from "./deps";
 import { hostSession } from "./session";
 import { onStopSignal } from "./signals";
 import { TerminalInput } from "./terminal";
@@ -39,12 +39,7 @@ function sessionDeps(deps: Deps, cfg: HostConfig, input: TerminalInput): Session
     crashSummary,
     now: deps.now ?? Date.now,
     sleep: (ms) => Bun.sleep(ms),
-    timers: {
-      every: (ms, fn) => {
-        const t = setInterval(fn, ms);
-        return () => clearInterval(t);
-      },
-    },
+    timers: realTimers,
     exit: (code) => process.exit(code),
   };
 }

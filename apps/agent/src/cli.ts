@@ -20,6 +20,7 @@ export type Command =
   | { kind: "admin-lobby-token"; name: string }
   | { kind: "admin-lobby-release" }
   | { kind: "admin-jar-add"; profile: string; file: string; side: string; name?: string; profilesDir: string }
+  | { kind: "lobby"; fresh: boolean }
   | { kind: "version" }
   | { kind: "help" };
 
@@ -34,6 +35,11 @@ Hosting
       Show the active world and who is hosting.
   version
       Print mc-host's version.
+
+Lobby
+  lobby [--fresh]
+      Run the lobby server (scripts/install-lobby.sh sets it up in Docker).
+      --fresh        ignore the backups and start an empty lobby
 
 Profiles
   profile resolve <profile> [--check <mc-version>] [--add-ready]
@@ -88,6 +94,7 @@ export function parseCommand(argv: string[]): Command {
         "add-ready": { type: "boolean", default: false },
         packs: { type: "string" },
         force: { type: "boolean", default: false },
+        fresh: { type: "boolean", default: false },
         all: { type: "boolean", default: false },
         keep: { type: "boolean", default: false },
         profiles: { type: "string", default: "profiles" },
@@ -119,6 +126,8 @@ export function parseCommand(argv: string[]): Command {
     case "stop":
     case "status":
       return { kind: group };
+    case "lobby":
+      return { kind: "lobby", fresh: values.fresh ?? false };
     case "profile":
       switch (sub) {
         case undefined:

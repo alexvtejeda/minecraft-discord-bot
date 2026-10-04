@@ -34,6 +34,7 @@ import { loadAdminConfig, loadHostConfig } from "./host/config";
 import { crashSummary } from "./run/crash";
 import { ensureEula } from "./run/eula";
 import { javaFor } from "./java/runtime";
+import { cmdLobby } from "./lobby/command";
 import { cmdCheckPacks } from "./packs/command";
 import { runServer } from "./run/server";
 import { buildServer, readMarker } from "./server/build";
@@ -207,6 +208,8 @@ export async function runCommand(cmd: Command, deps: Deps): Promise<void> {
       return cmdCheckPacks(cmd, deps);
     case "run":
       return cmdRun(cmd, deps);
+    case "lobby":
+      return cmdLobby(cmd, deps);
     case "start":
       return cmdStart(deps);
     case "stop":

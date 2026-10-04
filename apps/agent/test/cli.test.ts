@@ -76,3 +76,8 @@ test("parses the lobby admin commands", () => {
   expect(parseCommand(["admin", "lobby", "release"])).toEqual({ kind: "admin-lobby-release" });
   expect(() => parseCommand(["admin", "lobby", "token"])).toThrow(/Missing <name>/);
 });
+
+test("parses the lobby command", () => {
+  expect(parseCommand(["lobby"])).toEqual({ kind: "lobby", fresh: false });
+  expect(parseCommand(["lobby", "--fresh"])).toEqual({ kind: "lobby", fresh: true });
+});

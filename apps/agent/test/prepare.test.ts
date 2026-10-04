@@ -28,6 +28,7 @@ test("a fresh world: claim, build without datapacks, no download", async () => {
   expect(p).toMatchObject({ baseRev: 0, sessionId: "session-0123456789", levelName: "world", address: "100.64.0.3", marker: MARKER });
   expect(h.events).toEqual(["api:manifest", "api:claim 100.64.0.3", "build"]);
   expect(h.builds[0]!.profile.datapacks).toEqual([]);
+  expect(h.builds[0]!.profile.properties["accepts-transfers"]).toBe(true);
   expect(h.logs.join("\n")).toContain("datapacks and the resource pack aren't supported yet");
   expect(await readState(h.deps.dataDir)).toEqual({ worldId: "w1", baseRev: 0, dirty: false });
   expect(h.stop.count).toBe(1);

@@ -9,11 +9,22 @@ export const SAVE_TIMEOUT_MS = 2 * 60_000;
 export const UPLOAD_ATTEMPTS = 3;
 export const DOWNLOAD_ATTEMPTS = 3;
 export const PREGEN_RADIUS = 2000;
+/** How long players get to switch to the lobby before the server stops. */
+export const SEND_BACK_MS = 2_000;
+/** The lobby lookup on stop gives up after this, so a hung Worker never holds up the stop. */
+export const LOBBY_LOOKUP_MS = 3_000;
 
 export interface Timers {
   /** Call fn every ms milliseconds; returns a function that stops it. */
   every(ms: number, fn: () => void): () => void;
 }
+
+export const realTimers: Timers = {
+  every: (ms, fn) => {
+    const t = setInterval(fn, ms);
+    return () => clearInterval(t);
+  },
+};
 
 /** Everything the hosting session touches outside its own logic. Tests swap in fakes. */
 export interface SessionDeps {

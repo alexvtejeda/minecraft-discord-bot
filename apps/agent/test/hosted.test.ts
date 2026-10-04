@@ -8,9 +8,9 @@ import { runHosted } from "../src/host/run";
 import { readState, serverDirFor } from "../src/host/state";
 import { CHUNKY_DONE_LINE, DONE_LINE, makeHarness, manifestFor, MARKER, SESSION, until, type FakeServer } from "./host-fakes";
 
-async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line: string, s: FakeServer) => void } = {}) {
+async function started(o: { rev?: number; pregenDone?: boolean; respond?: (line: string, s: FakeServer) => void; lobby?: string } = {}) {
   const rev = o.rev ?? 0;
-  const h = makeHarness(await manifestFor({ pregenDone: o.pregenDone }), { respond: o.respond });
+  const h = makeHarness(await manifestFor({ pregenDone: o.pregenDone, lobby: o.lobby ? { address: o.lobby } : null }), { respond: o.respond });
   h.api.latestRev = rev;
   const serverDir = serverDirFor(h.deps.dataDir, "w1");
   mkdirSync(join(serverDir, "world"), { recursive: true });
@@ -177,3 +177,28 @@ test("the run phase takes over the heartbeat and keeps it going through the fina
   await done;
   expect(h.events.indexOf("api:heartbeat")).toBeGreaterThan(h.events.indexOf("server:stop"));
 });
+
+test("stopping sends everyone to the lobby first, when one is up", async () => {
+  const { h, done, server } = await started({ lobby: "100.64.0.50" });
+  h.stop.fire();
+  await done;
+  expect(server.written.slice(-2)).toEqual(["transfer 100.64.0.50 25565 @a", "stop"]);
+  expect(h.logs).toContain("Sending players back to the lobby…");
+});
+
+test("with no lobby, stopping goes straight to stop", async () => {
+  const { h, done, server } = await started();
+  h.stop.fire();
+  await done;
+  expect(server.written.some((l) => l.startsWith("transfer"))).toBe(false);
+  expect(server.written.at(-1)).toBe("stop");
+});
+
+test("a Worker that doesn't answer doesn't hold up the stop", async () => {
+  const { h, done, server } = await started({ lobby: "100.64.0.50" });
+  h.api.manifest = () => new Promise<never>(() => {});
+  h.stop.fire();
+  await done;
+  expect(server.written.some((l) => l.startsWith("transfer"))).toBe(false);
+  expect(server.written.at(-1)).toBe("stop");
+}, 10_000);

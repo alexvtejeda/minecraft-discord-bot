@@ -109,7 +109,9 @@ export async function prepare(deps: SessionDeps): Promise<Prepared> {
     }
     // Writes eula.txt again in case the folder was just moved aside and recreated.
     await deps.ensureEula(serverDir);
-    const marker = await deps.build({ profile: { ...profile, datapacks: [] }, lock, dir: serverDir });
+    // The lobby sends players here with /transfer, which a server refuses unless this is on.
+    const properties = { ...profile.properties, "accepts-transfers": true };
+    const marker = await deps.build({ profile: { ...profile, datapacks: [], properties }, lock, dir: serverDir });
     return { world, sessionId: claim.sessionId, baseRev, serverDir, levelName, marker, javaBin, pregenDone: manifest.pregenDone, address, unhook, stopHeartbeat };
   } catch (err) {
     stopHeartbeat();

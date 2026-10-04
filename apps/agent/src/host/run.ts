@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { UserError } from "@mc/profile";
 import { LeaseLostError, StaleRevError } from "./api";
 import { ServerConsole } from "./console";
-import { AUTOSAVE_MS, HEARTBEAT_MS, PREGEN_RADIUS, SAVE_TIMEOUT_MS, yes, type SessionDeps } from "./deps";
+import { AUTOSAVE_MS, HEARTBEAT_MS, LOBBY_LOOKUP_MS, PREGEN_RADIUS, SEND_BACK_MS, SAVE_TIMEOUT_MS, yes, type SessionDeps } from "./deps";
 import type { Prepared } from "./prepare";
 import { zipSnapshot } from "./snapshot";
 import { moveToRecovered, tmpDirFor, writeState } from "./state";
@@ -14,6 +14,13 @@ const SAVED = /Saved the game/;
 const CHUNKY_DONE = /\[Chunky\] Task finished for minecraft:overworld/;
 /** 129/130/143: Java stopped by a closed window, Ctrl+C or SIGTERM, which is a normal stop. */
 const NORMAL_EXIT = new Set([0, 129, 130, 143]);
+
+/** Resolves to null if `p` takes longer than ms. A real timer, so a faked sleep can't cut it short. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), ms)));
+  return Promise.race([p, late]).finally(() => clearTimeout(timer));
+}
 
 const isLeaseProblem = (err: unknown): err is Error => err instanceof LeaseLostError || err instanceof StaleRevError;
 
@@ -30,6 +37,14 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
 
   const server = deps.launch(p.serverDir, p.marker, p.javaBin);
   const con = new ServerConsole(server);
+  /** If a lobby is up, send everyone there first. Any failure just skips this step. */
+  const sendBack = async () => {
+    const lobby = await withTimeout(deps.api.manifest().then((m) => m.lobby), LOBBY_LOOKUP_MS).catch(() => null);
+    if (!lobby) return;
+    deps.log("Sending players back to the lobby…");
+    con.send(`transfer ${lobby.address} 25565 @a`);
+    await deps.sleep(SEND_BACK_MS);
+  };
   const stop = (why?: string) => {
     if (st.stopping) {
       deps.log("Still stopping, please wait…");
@@ -37,7 +52,7 @@ export async function runHosted(deps: SessionDeps, p: Prepared): Promise<void> {
     }
     st.stopping = true;
     if (why) deps.log(why);
-    con.send("stop");
+    void sendBack().finally(() => con.send("stop"));
   };
   // Stays installed until the very end, so Ctrl+C during the final upload can't abandon it.
   const unhookStop = deps.onStopSignal(() => stop("Stopping the server and saving the world. This can take a minute…"));
