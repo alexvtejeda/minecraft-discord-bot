@@ -48,3 +48,16 @@ export async function isRevoked(db: D1Database, discordId: string): Promise<bool
   const row = await db.prepare("SELECT revoked_at FROM users WHERE discord_id = ?").bind(discordId).first<{ revoked_at: number | null }>();
   return !!row && row.revoked_at !== null;
 }
+
+/** A token for the lobby server on one machine. Its user row can never host. */
+export async function mintLobbyToken(db: D1Database, name: string, now: number): Promise<string> {
+  const token = randomToken();
+  await db
+    .prepare(
+      `INSERT INTO users (discord_id, name, token_hash, created_at, scope) VALUES (?1, ?2, ?3, ?4, 'lobby')
+       ON CONFLICT (discord_id) DO UPDATE SET token_hash = excluded.token_hash, revoked_at = NULL`,
+    )
+    .bind(`lobby-${name}`, `lobby ${name}`, await hashToken(token), now)
+    .run();
+  return token;
+}

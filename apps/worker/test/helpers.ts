@@ -147,3 +147,24 @@ export async function putJar(bytes: Uint8Array, q: { sha512?: string; filename?:
   await waitOnExecutionContext(ctx);
   return { status: res.status, body: (await res.json()) as any, sha512 };
 }
+
+/** Insert a lobby-scoped user directly and return its plaintext token. */
+export async function addLobby(name = "fedora"): Promise<string> {
+  const token = `lobby-token-${name}-0123456789abcdef0123456789`;
+  await env.DB.prepare("INSERT INTO users (discord_id, name, token_hash, created_at, scope) VALUES (?, ?, ?, 1, 'lobby')")
+    .bind(`lobby-${name}`, `lobby ${name}`, await sha256Hex(token))
+    .run();
+  return token;
+}
+
+/** Put a lobby in the slot as if it had just polled. */
+export async function lobbyUp(address = "100.64.0.50", expiresAt = Date.now() + 60_000): Promise<void> {
+  await env.DB.prepare(
+    "INSERT INTO users (discord_id, name, token_hash, created_at, scope) VALUES ('lobby-up', 'lobby up', 'lobby-up-hash', 1, 'lobby') ON CONFLICT (discord_id) DO NOTHING",
+  ).run();
+  await env.DB.prepare(
+    "UPDATE lobby_slot SET holder_id = 'lobby-up', machine = 'fedora', session_id = 'lobby-session-0123456789', address = ?, claimed_at = ?, expires_at = ? WHERE id = 1",
+  )
+    .bind(address, Date.now(), expiresAt)
+    .run();
+}

@@ -2,6 +2,7 @@ import {
   CreateWorldRequestSchema,
   ImportCommitRequestSchema,
   ImportUrlRequestSchema,
+  LobbyTokenRequestSchema,
   MintTokenRequestSchema,
   type AdminStatus,
   type CommitResponse,
@@ -19,7 +20,7 @@ import { ApiError, readBody } from "../errors";
 import { getJar, MAX_JAR_BYTES, storeJar } from "../jars";
 import { forceRelease, isHeld, leaseInfo, readLease } from "../lease";
 import { beginUpload, commitSnapshot } from "../snapshots";
-import { listUsers, mintToken } from "../users";
+import { listUsers, mintLobbyToken, mintToken } from "../users";
 import { activeWorld, createWorld, latestSnapshot, validateWorldFiles, type WorldRow } from "../worlds";
 
 export const admin = new Hono<AppEnv>();
@@ -42,6 +43,12 @@ admin.post("/worlds", async (c) => {
 admin.post("/tokens", async (c) => {
   const req = await readBody(c, MintTokenRequestSchema);
   const body: MintTokenResponse = { token: await mintToken(c.env.DB, req.discordId, req.name, Date.now()) };
+  return c.json(body, 201);
+});
+
+admin.post("/lobby/token", async (c) => {
+  const { name } = await readBody(c, LobbyTokenRequestSchema);
+  const body: MintTokenResponse = { token: await mintLobbyToken(c.env.DB, name, Date.now()) };
   return c.json(body, 201);
 });
 

@@ -12,17 +12,25 @@ function bearer(header: string | undefined): string | null {
 
 const rejected = () => new ApiError("unauthorized", "Your token was rejected. Ask a maintainer for a new one.");
 
-export const agentAuth = createMiddleware<AppEnv>(async (c, next) => {
-  const token = bearer(c.req.header("Authorization"));
-  if (!token) throw rejected();
-  const row = await c.env.DB.prepare("SELECT discord_id, name FROM users WHERE token_hash = ? AND revoked_at IS NULL")
-    .bind(await hashToken(token))
-    .first<{ discord_id: string; name: string }>();
-  if (!row) throw rejected();
-  c.set("userId", row.discord_id);
-  c.set("userName", row.name);
-  await next();
-});
+/** A token of the given scope. Host tokens are refused on the lobby API and the other way round. */
+function tokenAuth(scope: "host" | "lobby") {
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const token = bearer(c.req.header("Authorization"));
+    if (!token) throw rejected();
+    const row = await c.env.DB.prepare(
+      "SELECT discord_id, name FROM users WHERE token_hash = ? AND revoked_at IS NULL AND scope = ?",
+    )
+      .bind(await hashToken(token), scope)
+      .first<{ discord_id: string; name: string }>();
+    if (!row) throw rejected();
+    c.set("userId", row.discord_id);
+    c.set("userName", row.name);
+    await next();
+  });
+}
+
+export const agentAuth = tokenAuth("host");
+export const lobbyAuth = tokenAuth("lobby");
 
 /** Compare hashes so the comparison takes the same time whatever the input. */
 async function sameSecret(a: string, b: string): Promise<boolean> {
