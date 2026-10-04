@@ -19,14 +19,14 @@ layer in front, never a dependency.
 |---|---|---|
 | Shape | A lobby server that hands players off with the vanilla `/transfer` command (1.20.5+). No Velocity or BungeeCord proxy. | The client logs in fresh to the host, so Fabric registry sync, Simple Voice Chat and performance are exactly as today. A proxy would need FabricProxy-Lite and a forwarding secret on every host, and switching a connected client from a vanilla lobby to a modded backend is fragile. |
 | Always-on machine | Accepted for the lobby only. Runs on the maintainer's Fedora box, later a Raspberry Pi. | Something has to answer TCP when nobody hosts, and Workers can't. Since the lobby carries no game traffic, it can be weak hardware and its outages never interrupt a game. |
-| Server software | Paper 26.3 | Plugin ecosystem for a hangout (WorldEdit, holograms, NPCs). ViaVersion is the fallback if Paper lags a future Minecraft release. |
-| Process | `mc-host lobby`, a new subcommand of the existing agent | Reuses the managed JRE, zip/upload, console multiplexer and the Docker plus Tailscale sidecar setup. The Pi only adds a `linux-arm64` build target. |
-| Redirect logic | A small Java Paper plugin, `lobby-bridge`, in the repo. `mc-host lobby` polls the Worker and tells the plugin the state over RCON. | `/stay`, `/play` and transfer on join must hook into in-game events. Keeping the Worker token and HTTP code in TypeScript keeps the plugin free of secrets and API knowledge. |
+| Server software | Paper 26.3, pinned to build 147 (26.3 only has beta builds so far) | Plugin ecosystem for a hangout (WorldEdit, holograms, NPCs). ViaVersion is the fallback if Paper lags a future Minecraft release. |
+| Process | `mc-host lobby`, a new subcommand of the existing agent | Reuses the managed JRE, zip/upload, console multiplexer and the Docker plus Tailscale sidecar setup. `scripts/install-lobby.sh` compiles `mc-host` on the machine itself, so the Pi needs no extra release target. |
+| Redirect logic | A small Java Paper plugin, `lobby-bridge`, in the repo. `mc-host lobby` polls the Worker and tells the plugin the state with a console command on Paper's stdin, the same way hosts send `save-all`. | `/stay`, `/play` and transfer on join must hook into in-game events. Keeping the Worker token and HTTP code in TypeScript keeps the plugin free of secrets and API knowledge. Stdin needs no RCON port or password. |
 | Existing lobby players when a host comes up | 10 s countdown in chat, then transfer everyone who didn't type `/stay` | Matches "auto-redirect" without yanking someone mid-build. |
 | Players joining while a host is up | Transferred one second after joining | They came to play; the lobby is just the doorway. |
 | Persistence | The whole lobby folder (world, plugins, configs) is zipped to R2, every 30 min and on stop. Keep the last 3. Restored on a machine with no local folder. | Makes the Pi move a non-event and survives SD card failure. Plugins are part of the backup; there is no plugin manifest. |
 | Single writer | A lobby slot: a one-row lease with a heartbeat, separate from the host lease | Stops two lobbies (Fedora and Pi during the move) from overwriting each other's backups. |
-| Credentials | A token with scope `lobby`, minted with `mc-host admin token mint --lobby` | It can hold the lobby slot, read the host lease and back up the lobby, but cannot claim a host lease or commit a world snapshot. |
+| Credentials | A token with scope `lobby`, minted with `mc-host admin lobby token <machine>` | It can hold the lobby slot, read the host lease and back up the lobby, but cannot claim a host lease or commit a world snapshot. |
 | Crashed host | Players reconnect to `mc-lobby` by hand | Only a proxy could catch that disconnect. Rare enough not to matter. |
 | Lobby start/stop announcements | None | The lobby restarts often; it would be noise. |
 | Downloaded hub maps | Allowed, never committed | The repo is public and most map licences forbid redistribution. They live in the lobby folder and its R2 backups. |
@@ -41,7 +41,7 @@ layer in front, never a dependency.
          ├─ restores the lobby folder from R2 if missing; backs it up every 30 min and on stop
          ├─ runs Paper 26.3 with the managed JRE
          ├─ polls the Worker every 5 s for the host lease
-         └─ on change: RCON "lobbybridge host …" / "lobbybridge none" ──▶ lobby-bridge plugin (Java)
+         └─ on change: stdin "lobbybridge host …" / "lobbybridge none" ──▶ lobby-bridge plugin (Java)
                                                                           ├─ countdown, /stay, /play
                                                                           └─ transfer on join
  Host PC ── mc-host start
@@ -53,31 +53,36 @@ layer in front, never a dependency.
 
 ### `mc-host lobby` (apps/agent)
 
-1. **Claim** the lobby slot with the sidecar's `100.x` address. If another machine holds
-   it: "The lobby is already running on <hostname> (heartbeat 1m ago). Stop it there
+1. **Claim** the lobby slot with the sidecar's `100.x` address and the machine's name. A
+   restart on the same machine sends its previous session ID, so it gets the slot back
+   without waiting for the expiry. If another machine holds it: "The lobby is already running on <hostname> (heartbeat 1m ago). Stop it there
    first, or run `mc-host admin lobby release`."
-2. **Restore.** If the lobby folder doesn't exist locally, download the latest backup and
-   check its sha256 before unzipping. If there is no backup, create a fresh lobby: Paper
-   26.3, superflat `server.properties`, `lobby-bridge`. If the backup is corrupt or the
-   download fails, refuse to start; `--fresh` overrides. A fresh empty lobby must never
-   silently replace a build.
-3. **Plugin.** Make sure `plugins/lobby-bridge.jar` is the version this `mc-host` ships
-   (download it from the GitHub release, check its sha256). Never touch other plugins.
-4. **Paper.** Download the pinned Paper build (sha256 checked), start it with RCON bound
-   to `127.0.0.1` and a random password generated each start. Same console multiplexer as
-   hosting, so the maintainer can type commands.
+2. **Restore.** Local state records which backup rev the folder matches. If the folder
+   doesn't exist locally, download the latest backup and check its sha256 before
+   unzipping. If the local folder is older than the latest backup (Fedora coming back
+   after the Pi ran), move it to `lobby/old-<stamp>` and restore. If there is no backup,
+   create a fresh lobby. If the backup is corrupt or the download fails, refuse to start;
+   `--fresh` ignores the backups on purpose. A fresh empty lobby must never silently
+   replace a build.
+3. **Plugin.** Copy `lobby-bridge.jar` (built by `install-lobby.sh` and baked into the
+   image, path in `MC_LOBBY_BRIDGE_JAR`) into `plugins/`. Never touch other plugins.
+4. **Paper.** Download the pinned Paper build (sha256 checked) and start it with the
+   managed Java 25. Same console multiplexer as hosting, so the maintainer can type
+   commands (`mc-lobby console`). The EULA is agreed once in `install-lobby.sh`
+   (`MC_ACCEPT_EULA=true`), since the container has no one to ask.
 5. **Poll.** Every 5 s, `GET /lobby/state` returns the host lease (holder name, address,
    world name, MC version) or null. The poll doubles as the slot heartbeat. When the
-   result changes, send `lobbybridge host <address> <port> <holder> <world>` or
-   `lobbybridge none` over RCON. Also re-send after Paper restarts. If the Worker is
-   unreachable, keep the last state, retry with backoff, log once.
+   result changes, send `lobbybridge host <address> <port> <world> <holder>` or
+   `lobbybridge none` on stdin, once Paper prints `Done`. If the Worker is unreachable,
+   keep the last state and log once. If the slot lapsed (a long outage), claim it back
+   with the previous session; if another lobby took it, stop without a backup.
 6. **Backup.** Every 30 min and on stop: `save-off`, `save-all flush`, zip the folder
    (excluding `cache/`, `libraries/`, `versions/`, `logs/` and the Paper jar), upload by
    presigned URL, commit, `save-on`. Reuses the host snapshot code. On repeated failure,
    warn in the console; the lobby keeps running.
 7. **Stop** (Ctrl+C or Docker stop): Paper `stop`, final backup, release the slot.
 
-### `lobby-bridge` (new `apps/lobby-bridge`, Java, Gradle)
+### `lobby-bridge` (new `paper/lobby-bridge`, Java, Gradle)
 
 State: `none` or `host(address, port, holder, world)`, set only by the `lobbybridge`
 console command (op/console only).
@@ -91,9 +96,10 @@ console command (op/console only).
 | State goes `host` → `none` mid-countdown | Cancel the countdown, broadcast "Hosting stopped." Clear all `/stay` flags. |
 | A player joins while `none` | Join message: "Nobody's hosting. `/status` in Discord shows who hosted last." |
 
-Transfer uses Paper's `Player#transfer(host, port)`. Built and attached to the GitHub
-release by the same pipeline as `mc-host` binaries; its version and sha256 are compiled
-into `mc-host`.
+Transfer uses Paper's `Player#transfer(host, port)`. The rules live in a `Bridge` class
+with no Bukkit types, behind a small `Lobby` interface, so they're tested with plain
+JUnit. Gradle runs in the official `gradle:9.8.0-jdk25` Docker image (`scripts/gradle.sh`),
+so nobody installs Gradle.
 
 ### Worker (apps/worker)
 
@@ -107,13 +113,13 @@ into `mc-host`.
   `POST /lobby/release`, `POST /lobby/backup/upload-url`, `POST /lobby/backup/commit`,
   `GET /lobby/backup/latest`. Backup commit needs the current slot session, the same
   single-writer rule as world snapshots.
-- **Admin:** `mc-host admin token mint --lobby <name>` and `mc-host admin lobby release`.
+- **Admin:** `mc-host admin lobby token <machine>` and `mc-host admin lobby release`.
 - **Agent manifest:** add `lobby: { address } | null` (null when the slot is expired) so
   `mc-host stop` knows where to send people.
 - **Discord**
-  - `/join`: "Add `mc-lobby` as your server, once." Full `mc-lobby.<tailnet>.ts.net`
-    as a fallback if the short name doesn't resolve. Suggests a second entry for direct
-    connections when the lobby is down.
+  - `/join`: "Add `mc-lobby` as your server, once." The lobby's `100.x` address as a
+    fallback if the short name doesn't resolve. When the lobby is down, the host's direct
+    address.
   - `/status`: a lobby line (🟢 up / ⚫ down). When the lobby is down and someone is
     hosting: "Lobby is down, connect directly to `100.x.y.z:25565`."
   - The 🟢 hosting announcement keeps the direct address.
@@ -130,8 +136,10 @@ into `mc-host`.
   `TS_HOSTNAME=mc-lobby` and a `tag:mc-player` auth key, the agent container running
   `mc-host lobby`, `restart: unless-stopped`. No change to the tailnet policy: the lobby is
   a `tag:mc-player` device on port 25565 and clients already reach those.
-- `scripts/install.sh --lobby` sets it up. Docker images and the release build add
-  `linux-arm64` for the Pi.
+- `scripts/install-lobby.sh` builds `mc-host` and the plugin, asks for the EULA, starts the
+  `mc-lobby` compose project, and installs an `mc-lobby` command
+  (`start|stop|console|logs|status|fresh`). Everything is built on the machine, so the
+  same script works on the Pi.
 - A setup guide, `docs/setup/phase-5.md`, covering the token, the install, dropping in a
   downloaded map, and the Pi move.
 
@@ -152,12 +160,12 @@ into `mc-host`.
 - **Worker (Vitest, Miniflare):** lobby slot claim, heartbeat, expiry and a refused second
   claimant; token scopes in both directions; backup commit only from the slot holder;
   rotation to 3; `lobby` in the manifest; `/status` and `/join` text for lobby up/down.
-- **Agent:** poll loop sends RCON only on change and after a Paper restart; backup
+- **Agent:** poll loop sends the console command only on change; backup
   exclusions and rotation; restore refuses corrupt backups; `stop` sends players back
   only when a lobby is named. Integration test against the local Worker with Paper faked,
   like the existing host integration test.
-- **Plugin (MockBukkit):** countdown, `/stay`, `/play`, transfer on join, cancellation
-  when the host goes away.
+- **Plugin (JUnit, no server):** countdown, `/stay`, `/play`, transfer on join,
+  cancellation when the host goes away, and the console command parsing.
 - **Manual checklist:**
   - Lobby on Fedora, host on the Windows VM: join `mc-lobby`, the host comes up, countdown, transfer.
   - `/stay` keeps you in; `/play` sends you.

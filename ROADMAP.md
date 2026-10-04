@@ -65,9 +65,9 @@ Guide: [docs/setup/local-jars.md](docs/setup/local-jars.md)
 Design: [docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md](docs/superpowers/specs/2026-10-03-phase-5-lobby-design.md)
 - [ ] Worker: lobby slot, `lobby`-scoped tokens, lobby backups in R2, lobby in the manifest, `/status` and `/join`
 - [ ] `lobby-bridge` Paper plugin: countdown, `/stay`, `/play`, transfer on join
-- [ ] `mc-host lobby`: Paper 26.3, restore and backup, polls the Worker, drives the plugin over RCON
+- [ ] `mc-host lobby`: Paper 26.3, restore and backup, polls the Worker, drives the plugin on stdin
 - [ ] Hosts: `accepts-transfers=true`, send players back to the lobby on stop
-- [ ] `install.sh --lobby`, `linux-arm64` builds, setup guide; run it on Fedora
+- [ ] `install-lobby.sh`, setup guide; run it on Fedora
 
 ## Phase 6: Update watcher
 - [ ] Cron job that polls Mojang's version manifest for new releases
