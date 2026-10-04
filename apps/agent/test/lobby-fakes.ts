@@ -1,8 +1,17 @@
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { LobbyClaimRequest, LobbyClaimResponse, LobbyCommitRequest, LobbyHost, LobbyPollResponse, SnapshotRef, UploadTarget } from "@mc/protocol";
-import type { LobbyApi } from "../src/host/api";
+import type {
+  LobbyClaimRequest,
+  LobbyClaimResponse,
+  LobbyCommitRequest,
+  LobbyHost,
+  LobbyPollResponse,
+  LobbyUploadUrlRequest,
+  SnapshotRef,
+  UploadTarget,
+} from "@mc/protocol";
+import { StaleRevError, type LobbyApi } from "../src/host/api";
 import { zipLobby } from "../src/lobby/folder";
 import type { LobbyDeps } from "../src/lobby/run";
 import { FakeServer, ManualTimers, StopSignal } from "./host-fakes";
@@ -16,6 +25,7 @@ export class FakeLobbyApi implements LobbyApi {
   /** Each call takes the next error, if any. */
   claimErrors: Error[] = [];
   pollErrors: Error[] = [];
+  backupUrlErrors: Error[] = [];
   commits: LobbyCommitRequest[] = [];
   private sessions = 0;
 
@@ -38,14 +48,23 @@ export class FakeLobbyApi implements LobbyApi {
   async release(sessionId: string): Promise<void> {
     this.events.push(`api:release ${sessionId}`);
   }
-  async backupUrl(): Promise<UploadTarget> {
-    const rev = (this.latest?.rev ?? 0) + 1;
-    this.events.push("api:backupUrl");
+  /** Like the Worker: a backup must be based on the latest one. */
+  private requireLatest(baseRev: number) {
+    const latest = this.latest?.rev ?? 0;
+    if (baseRev !== latest) throw new StaleRevError(`This lobby's copy is based on backup rev ${baseRev}, but the latest backup is rev ${latest}.`);
+  }
+  async backupUrl(req: LobbyUploadUrlRequest): Promise<UploadTarget> {
+    this.events.push(`api:backupUrl ${req.baseRev}`);
+    const err = this.backupUrlErrors.shift();
+    if (err) throw err;
+    this.requireLatest(req.baseRev);
+    const rev = req.baseRev + 1;
     return { rev, key: `lobby/${rev}-k.zip`, url: "https://r2.test/put", headers: {} };
   }
   async commitBackup(req: LobbyCommitRequest): Promise<number> {
     this.events.push(`api:commitBackup ${req.rev}`);
     this.commits.push(req);
+    this.requireLatest(req.baseRev);
     this.latest = { rev: req.rev, sha256: req.sha256, size: req.size, url: `https://r2.test/lobby${req.rev}.zip` };
     return req.rev;
   }

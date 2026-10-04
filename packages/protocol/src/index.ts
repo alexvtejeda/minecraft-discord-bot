@@ -178,10 +178,12 @@ export const LobbyHostSchema = z.object({ name: z.string(), address: z.string(),
 export type LobbyHost = z.infer<typeof LobbyHostSchema>;
 export const LobbyPollResponseSchema = z.object({ host: LobbyHostSchema.nullable(), expiresAt: z.number() });
 export type LobbyPollResponse = z.infer<typeof LobbyPollResponseSchema>;
-export const LobbyUploadUrlRequestSchema = z.object({ sessionId: SessionId, size: Size, sha256: Sha256Schema });
+/** baseRev: the backup rev this lobby's folder started from (0 = no backup yet). A newer backup refuses the upload. */
+export const LobbyUploadUrlRequestSchema = z.object({ sessionId: SessionId, baseRev: Rev, size: Size, sha256: Sha256Schema });
 export type LobbyUploadUrlRequest = z.infer<typeof LobbyUploadUrlRequestSchema>;
 export const LobbyCommitRequestSchema = z.object({
   sessionId: SessionId,
+  baseRev: Rev,
   rev: PositiveRev,
   key: z.string().min(1),
   size: Size,

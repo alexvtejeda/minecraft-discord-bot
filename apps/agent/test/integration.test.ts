@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Subprocess } from "bun";
-import { createAdminApi, createAgentApi, createLobbyApi, LeaseHeldError } from "../src/host/api";
+import { createAdminApi, createAgentApi, createLobbyApi, LeaseHeldError, StaleRevError } from "../src/host/api";
 import { restoreLobby, zipLobby } from "../src/lobby/folder";
 import { AUTOSAVE_MS } from "../src/host/deps";
 import { hostSession } from "../src/host/session";
@@ -123,9 +123,11 @@ test.skipIf(!RUN)("a lobby claims its slot, sees the host, and backs up through 
   writeFileSync(join(work, "src", "server.properties"), "motd=Lobby\n");
   const zip = join(work, "backup.zip");
   const zipped = await zipLobby(join(work, "src"), zip);
-  const target = await lobby.backupUrl({ sessionId, ...zipped });
+  const target = await lobby.backupUrl({ sessionId, baseRev: 0, ...zipped });
   await uploadFile(fetch, target, zip);
-  const rev = await lobby.commitBackup({ sessionId, rev: target.rev, key: target.key, ...zipped });
+  const rev = await lobby.commitBackup({ sessionId, baseRev: 0, rev: target.rev, key: target.key, ...zipped });
+  // A copy based on an older backup is refused.
+  await expect(lobby.backupUrl({ sessionId, baseRev: 0, ...zipped })).rejects.toBeInstanceOf(StaleRevError);
 
   const latest = await lobby.latestBackup();
   expect(latest).toMatchObject({ rev, sha256: zipped.sha256 });

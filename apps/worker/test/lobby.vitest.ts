@@ -93,9 +93,9 @@ describe("the lobby slot", () => {
 });
 
 /** upload-url, then PUT through the dev R2 proxy. Commit is left to the test. */
-async function backup(sessionId: string, data: string) {
+async function backup(sessionId: string, data: string, baseRev = 0) {
   const sha256 = await sha256Hex(data);
-  const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId, size: data.length, sha256 } });
+  const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId, baseRev, size: data.length, sha256 } });
   expect(t.status).toBe(200);
   const ctx = createExecutionContext();
   await app.request(t.body.url, { method: "PUT", headers: t.body.headers, body: data }, env, ctx);
@@ -103,7 +103,7 @@ async function backup(sessionId: string, data: string) {
   return {
     target: t.body,
     commit: () =>
-      call("POST", "/lobby/backup/commit", { token: lobby, body: { sessionId, rev: t.body.rev, key: t.body.key, size: data.length, sha256 } }),
+      call("POST", "/lobby/backup/commit", { token: lobby, body: { sessionId, baseRev, rev: t.body.rev, key: t.body.key, size: data.length, sha256 } }),
   };
 }
 
@@ -126,24 +126,49 @@ describe("lobby backups", () => {
     expect((await b.commit()).body).toEqual({ rev: 1 });
     await env.DB.prepare("UPDATE lobby_slot SET expires_at = ? WHERE id = 1").bind(Date.now() - 1).run();
     await claimAs({ machine: "pi" });
-    const r = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, size: 3, sha256: await sha256Hex("old") } });
+    const r = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, baseRev: 1, size: 3, sha256: await sha256Hex("old") } });
     expect(r.status).toBe(409);
     expect(r.body.error).toBe("lease_lost");
   });
 
+  it("a lobby whose folder is older than the latest backup can't back up over it", async () => {
+    // Fedora backs up rev 1, then its slot lapses; the Pi runs, backs up rev 2 and leaves.
+    const fedora = (await claimAs()).body.sessionId;
+    await (await backup(fedora, "fedora 1")).commit();
+    await env.DB.prepare("UPDATE lobby_slot SET expires_at = ? WHERE id = 1").bind(Date.now() - 1).run();
+    const pi = (await claimAs({ machine: "pi" })).body.sessionId;
+    await (await backup(pi, "pi 2", 1)).commit();
+    await call("POST", "/lobby/release", { token: lobby, body: { sessionId: pi } });
+    // Fedora reclaims the free slot, but its folder is still based on rev 1.
+    const again = (await claimAs({ previousSessionId: fedora })).body.sessionId;
+    const sha256 = await sha256Hex("fedora stale");
+    const u = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: again, baseRev: 1, size: 12, sha256 } });
+    expect(u.status).toBe(409);
+    expect(u.body.error).toBe("stale_rev");
+    // Even with an upload already in storage as rev 3, the commit is refused.
+    const key = "lobby/3-stale.zip";
+    await env.BUCKET.put(key, "fedora stale");
+    const c = await call("POST", "/lobby/backup/commit", { token: lobby, body: { sessionId: again, baseRev: 1, rev: 3, key, size: 12, sha256 } });
+    expect(c.status).toBe(409);
+    expect(c.body.error).toBe("stale_rev");
+    expect(await env.DB.prepare("SELECT MAX(rev) AS rev FROM lobby_backups").first("rev")).toBe(2);
+    // Based on the latest backup, it can.
+    expect((await (await backup(again, "fedora 3", 2)).commit()).body).toEqual({ rev: 3 });
+  });
+
   it("refuses a commit whose upload never arrived", async () => {
     const s = (await claimAs()).body.sessionId;
-    const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, size: 3, sha256: await sha256Hex("abc") } });
+    const t = await call("POST", "/lobby/backup/upload-url", { token: lobby, body: { sessionId: s, baseRev: 0, size: 3, sha256: await sha256Hex("abc") } });
     const r = await call("POST", "/lobby/backup/commit", {
       token: lobby,
-      body: { sessionId: s, rev: t.body.rev, key: t.body.key, size: 3, sha256: await sha256Hex("abc") },
+      body: { sessionId: s, baseRev: 0, rev: t.body.rev, key: t.body.key, size: 3, sha256: await sha256Hex("abc") },
     });
     expect(r.body.error).toBe("upload_missing");
   });
 
   it("keeps the last 3 backups", async () => {
     const s = (await claimAs()).body.sessionId;
-    for (let i = 1; i <= 4; i++) await (await backup(s, `backup ${i}`)).commit();
+    for (let i = 1; i <= 4; i++) await (await backup(s, `backup ${i}`, i - 1)).commit();
     const revs = (await env.DB.prepare("SELECT rev FROM lobby_backups ORDER BY rev").all<{ rev: number }>()).results.map((r) => r.rev);
     expect(revs).toEqual([2, 3, 4]);
     expect((await env.BUCKET.list({ prefix: "lobby/" })).objects).toHaveLength(3);

@@ -104,3 +104,20 @@ test("the lobby client uses /lobby routes, and a refusal becomes a plain message
   expect(seen[0]).toMatchObject({ url: "https://w.test/lobby/poll", method: "POST", auth: "Bearer tok", body: { sessionId: "s".repeat(16) } });
   await expect(api.claim({ address: "100.64.0.50", machine: "fedora" })).rejects.toThrow(refused);
 });
+
+test("the lobby client sends the backup's base rev, and a newer backup becomes StaleRevError", async () => {
+  const stale = "This lobby's copy is based on backup rev 1, but the latest backup is rev 2, so it can't be backed up.";
+  const { fetch, seen } = fakeFetch((url) =>
+    url.endsWith("/upload-url")
+      ? json({ rev: 2, key: "lobby/2-k.zip", url: "https://r2.test/put", headers: {} })
+      : json({ error: "stale_rev", message: stale }, 409),
+  );
+  const api = createLobbyApi({ workerUrl: "https://w.test/", token: "tok", fetch });
+  const s = "s".repeat(16);
+  await api.backupUrl({ sessionId: s, baseRev: 1, size: 5, sha256: SHA });
+  expect(seen[0]).toMatchObject({ url: "https://w.test/lobby/backup/upload-url", body: { sessionId: s, baseRev: 1, size: 5, sha256: SHA } });
+  const commit = api.commitBackup({ sessionId: s, baseRev: 1, rev: 2, key: "lobby/2-k.zip", size: 5, sha256: SHA });
+  await expect(commit).rejects.toBeInstanceOf(StaleRevError);
+  await expect(commit).rejects.toThrow(stale);
+  expect(seen[1]).toMatchObject({ url: "https://w.test/lobby/backup/commit", body: { baseRev: 1, rev: 2 } });
+});

@@ -178,7 +178,7 @@ export async function runLobby(deps: LobbyDeps): Promise<void> {
           }
         })();
         // Upload after save-on, so the world isn't frozen while it runs.
-        st.backupRev = await pushBackup(deps, st.sessionId, file, zipped);
+        st.backupRev = await pushBackup(deps, st.sessionId, st.backupRev, file, zipped);
         await save();
         deps.log(`Backed up the lobby as rev ${st.backupRev}.`);
       } catch (err) {
@@ -211,18 +211,34 @@ export async function runLobby(deps: LobbyDeps): Promise<void> {
 
     deps.log("Backing up the lobby…");
     const file = join(tmpDirFor(deps.dataDir), "lobby-final.zip");
+    // A newer backup, or a slot that's someone else's: never release a slot that isn't ours.
+    let ours = true;
     try {
-      st.backupRev = await pushBackup(deps, st.sessionId, file, await zipLobby(dir, file));
+      st.backupRev = await pushBackup(deps, st.sessionId, st.backupRev, file, await zipLobby(dir, file));
       await save();
       deps.log(`Backed up the lobby as rev ${st.backupRev}.`);
     } catch (err) {
-      deps.log(`Couldn't back up the lobby (${(err as Error).message}). This machine's copy is kept and is backed up next time.`);
+      if (err instanceof StaleRevError) {
+        ours = false;
+        deps.log(
+          "Couldn't back up the lobby: another lobby has a newer backup, so this machine's copy wasn't uploaded. The next start sets it aside and restores the newer backup.",
+        );
+      } else if (err instanceof LeaseLostError) {
+        ours = false;
+        deps.log(
+          "Couldn't back up the lobby: its slot isn't this machine's any more, so this copy wasn't uploaded. If another lobby has backed up since, the next start sets this copy aside and restores the newer backup.",
+        );
+      } else {
+        deps.log(`Couldn't back up the lobby (${(err as Error).message}). This machine's copy is kept and is backed up next time.`);
+      }
     } finally {
       await rm(file, { force: true });
     }
-    await deps.api
-      .release(st.sessionId)
-      .catch((err) => deps.log(`Couldn't release the lobby slot (${(err as Error).message}). It frees itself within 2 minutes.`));
+    if (ours) {
+      await deps.api
+        .release(st.sessionId)
+        .catch((err) => deps.log(`Couldn't release the lobby slot (${(err as Error).message}). It frees itself within 2 minutes.`));
+    }
     deps.log("The lobby has stopped.");
   } finally {
     stopPoll();
@@ -283,6 +299,8 @@ async function fetchBackup(deps: Pick<LobbyDeps, "download" | "log" | "dataDir">
 async function pushBackup(
   deps: Pick<LobbyDeps, "api" | "upload" | "sleep">,
   sessionId: string,
+  /** The backup rev this folder started from: the Worker refuses the backup if a newer one exists. */
+  baseRev: number,
   file: string,
   zipped: { sha256: string; size: number },
 ): Promise<number> {
@@ -292,11 +310,11 @@ async function pushBackup(
   for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt++) {
     try {
       if (!target) {
-        const next = await deps.api.backupUrl({ sessionId, ...zipped });
+        const next = await deps.api.backupUrl({ sessionId, baseRev, ...zipped });
         await deps.upload(next, file);
         target = next;
       }
-      return await deps.api.commitBackup({ sessionId, rev: target.rev, key: target.key, ...zipped });
+      return await deps.api.commitBackup({ sessionId, baseRev, rev: target.rev, key: target.key, ...zipped });
     } catch (err) {
       if (err instanceof LeaseLostError || err instanceof StaleRevError) throw err;
       last = err as Error;

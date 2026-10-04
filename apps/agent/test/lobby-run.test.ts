@@ -157,6 +157,64 @@ test("a lapsed session is claimed back; if another lobby took over, this one sto
   expect(h.events.some((e) => e.startsWith("api:release"))).toBe(false);
 });
 
+test("lapsed, another lobby ran and left, the slot is claimed back: the next backup is refused and the lobby stops without one", async () => {
+  const { h, done, server } = await running();
+  server.emit(DONE_LINE);
+  // While this lobby couldn't reach the Worker, the Pi ran, backed up rev 1 and released the slot.
+  h.api.latest = { rev: 1, sha256: "b".repeat(64), size: 10, url: "https://r2.test/lobby1.zip" };
+  h.api.pollErrors.push(new LeaseLostError("lapsed"));
+  h.timers.fire(POLL_MS);
+  await until(() => h.logs.includes("The lobby's slot had lapsed; it's back."));
+
+  h.timers.fire(LOBBY_BACKUP_MS);
+  await expect(done).rejects.toThrow(
+    "This lobby's copy is based on backup rev 0, but the latest backup is rev 1. This lobby is stopping without a backup.",
+  );
+  expect(h.events).toContain("api:backupUrl 0");
+  expect(server.written.at(-1)).toBe("stop");
+  expect(h.api.commits).toEqual([]);
+  expect(h.events.some((e) => e.startsWith("upload"))).toBe(false);
+  expect(h.events.some((e) => e.startsWith("api:release"))).toBe(false);
+  expect(await readLobbyState(h.deps.dataDir)).toEqual({ sessionId: `${LOBBY_SESSION}-2`, backupRev: 0 });
+});
+
+test("a final backup refused for a newer backup says the copy is set aside next start, and doesn't release", async () => {
+  const fx = await lobbyFixture("the Pi's newer lobby");
+  const { h, done } = await running({ fixtureZip: fx.zip });
+  h.api.latest = { rev: 1, sha256: fx.sha256, size: fx.size, url: "https://r2.test/lobby1.zip" };
+  h.stop.fire();
+  await done;
+  expect(h.api.commits).toEqual([]);
+  expect(h.events.some((e) => e.startsWith("api:release"))).toBe(false);
+  expect(h.logs.some((l) => l.includes("is backed up next time"))).toBe(false);
+  expect(h.logs).toContain(
+    "Couldn't back up the lobby: another lobby has a newer backup, so this machine's copy wasn't uploaded. The next start sets it aside and restores the newer backup.",
+  );
+  expect(h.logs.at(-1)).toBe("The lobby has stopped.");
+
+  // The next start on this machine does just that.
+  const next = makeLobbyHarness({ fixtureZip: fx.zip });
+  next.deps.dataDir = h.deps.dataDir;
+  next.api.latest = h.api.latest;
+  const again = runLobby(next.deps);
+  await until(() => next.servers.length === 1);
+  expect(readFileSync(join(lobbyServerDir(h.deps.dataDir), "world", "level.dat"), "utf8")).toBe("the Pi's newer lobby");
+  expect(readdirSync(lobbyRoot(h.deps.dataDir)).filter((n) => n.startsWith("old-"))).toHaveLength(1);
+  next.stop.fire();
+  await again;
+});
+
+test("a final backup refused because the slot was lost doesn't release it", async () => {
+  const { h, done } = await running();
+  h.api.backupUrlErrors.push(new LeaseLostError("The lobby's slot is someone else's now."));
+  h.stop.fire();
+  await done;
+  expect(h.api.commits).toEqual([]);
+  expect(h.events.some((e) => e.startsWith("api:release"))).toBe(false);
+  expect(h.logs.some((l) => l.startsWith("Couldn't back up the lobby: its slot isn't this machine's any more"))).toBe(true);
+  expect(h.logs.some((l) => l.includes("is backed up next time"))).toBe(false);
+});
+
 test("an unreachable Worker is logged once, and the lobby keeps running", async () => {
   const { h, done } = await running();
   h.api.pollErrors.push(new OfflineError("no network"), new OfflineError("no network"));

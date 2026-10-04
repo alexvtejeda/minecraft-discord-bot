@@ -21,33 +21,51 @@ export const lobbyBackupKey = (rev: number) => `lobby/${rev}-${crypto.randomUUID
 export const latestBackup = (db: D1Database) =>
   db.prepare("SELECT * FROM lobby_backups ORDER BY rev DESC LIMIT 1").first<LobbyBackupRow>();
 
-export async function beginLobbyUpload(env: Env, requestUrl: string, o: { sessionId: string; sha256: string }): Promise<UploadTarget> {
+const staleBackup = (baseRev: number, latest: number) =>
+  new ApiError(
+    "stale_rev",
+    `This lobby's copy is based on backup rev ${baseRev}, but the latest backup is rev ${latest}, so it can't be backed up. Starting the lobby again sets this copy aside and restores the latest backup.`,
+  );
+
+export async function beginLobbyUpload(
+  env: Env,
+  requestUrl: string,
+  o: { sessionId: string; baseRev: number; sha256: string },
+): Promise<UploadTarget> {
   await requireSlotSession(env.DB, o.sessionId);
-  const rev = ((await latestBackup(env.DB))?.rev ?? 0) + 1;
+  const latest = (await latestBackup(env.DB))?.rev ?? 0;
+  if (o.baseRev !== latest) throw staleBackup(o.baseRev, latest);
+  const rev = latest + 1;
   const key = lobbyBackupKey(rev);
   return { rev, key, ...(await storageFor(env, requestUrl).putTarget(key, o.sha256)) };
 }
 
-/** Only the slot's current session may commit, and only as latest + 1, so two lobbies can't interleave backups. */
+/**
+ * Only the slot's current session may commit, only on top of the backup its folder started from
+ * (baseRev), and only as baseRev + 1, so two lobbies can't interleave backups. All checks run
+ * inside the INSERT.
+ */
 export async function commitLobbyBackup(
   env: Env,
-  o: { sessionId: string; rev: number; key: string; size: number; sha256: string; now: number },
+  o: { sessionId: string; baseRev: number; rev: number; key: string; size: number; sha256: string; now: number },
 ): Promise<void> {
   await verifyUpload(env.BUCKET, { prefix: `lobby/${o.rev}-`, key: o.key, size: o.size, sha256: o.sha256 }, "That upload key doesn't belong to this lobby backup.");
   const r = await env.DB.prepare(
     `INSERT INTO lobby_backups (rev, r2_key, size, sha256, created_at)
      SELECT ?1, ?2, ?3, ?4, ?5
      WHERE EXISTS (SELECT 1 FROM lobby_slot WHERE id = 1 AND session_id = ?6)
-       AND (SELECT COALESCE(MAX(rev), 0) FROM lobby_backups) = ?1 - 1`,
+       AND ?1 = ?7 + 1
+       AND (SELECT COALESCE(MAX(rev), 0) FROM lobby_backups) = ?7`,
   )
-    .bind(o.rev, o.key, o.size, o.sha256, o.now, o.sessionId)
+    .bind(o.rev, o.key, o.size, o.sha256, o.now, o.sessionId, o.baseRev)
     .run();
   if (r.meta.changes !== 1) {
     // A retry of a commit that already landed (its reply was lost) is not an error.
     const landed = await env.DB.prepare("SELECT 1 FROM lobby_backups WHERE rev = ? AND r2_key = ?").bind(o.rev, o.key).first();
     if (!landed) {
       if ((await readSlot(env.DB)).session_id !== o.sessionId) throw slotLostError();
-      throw new ApiError("stale_rev", `Lobby backup ${o.rev} can't be committed because a newer backup exists.`);
+      const latest = (await latestBackup(env.DB))?.rev ?? 0;
+      throw staleBackup(o.baseRev, latest);
     }
   }
   // Best effort: the commit has landed, so a failed cleanup must not turn it into an error.
