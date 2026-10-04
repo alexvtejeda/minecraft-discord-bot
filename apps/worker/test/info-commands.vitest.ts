@@ -90,6 +90,20 @@ describe("/mod list", () => {
     await addWorld("w1", "active", [lockEntry("dragonbond", "both", { source: "jar", versionNumber: "1.1.1" })]);
     expect(await content("mod list")).toContain("- dragonbond 1.1.1 (uploaded)");
   });
+
+  it("lists a bundled profile's mods, with or without an active world", async () => {
+    const list = async (profile: string) => (await postInteraction(slash("mod list", { profile }))).body.data.content as string;
+    const s = await list("adventure");
+    expect(s).toContain("**adventure** profile (26.3, Fabric 0.19.5)");
+    expect(s).toContain("- badoptimizations 2.4.1");
+    await addWorld("w1", "active", [lockEntry("only-in-the-world", "server")]);
+    expect(await list("adventure")).not.toContain("only-in-the-world");
+  });
+
+  it("names a profile that isn't in this deploy", async () => {
+    const s = (await postInteraction(slash("mod list", { profile: "gone" }))).body.data.content;
+    expect(s).toBe('There\'s no profile called "gone" in this deploy. Pick one from the list.');
+  });
 });
 
 describe("the lobby in /status and /join", () => {

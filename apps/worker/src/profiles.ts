@@ -1,4 +1,6 @@
 import type { Lockfile, Profile } from "@mc/profile";
+import cst from "../../../profiles/cst.json";
+import cstLock  from "../../../profiles/cst.lock.json";
 import adventure from "../../../profiles/adventure.json";
 import adventureLock from "../../../profiles/adventure.lock.json";
 import vanillaPlus from "../../../profiles/vanilla-plus.json";
@@ -11,6 +13,7 @@ import { validateWorldFiles } from "./worlds";
  * re-running `mc-host profile resolve` fails the tests instead of /world new.
  */
 const RAW: [unknown, unknown][] = [
+  [cst, cstLock],
   [adventure, adventureLock],
   [vanillaPlus, vanillaPlusLock],
 ];

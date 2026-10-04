@@ -1,0 +1,258 @@
+{
+  "name": "cst",
+  "description": "Adventure plus extra mobs, bosses, ships, biomes and enchantments. Everyone needs the modpack.",
+  "minecraft": "26.3",
+  "loader": {
+    "fabric": "latest-stable"
+  },
+  "memory": {
+    "min": "4G",
+    "max": "12G"
+  },
+  "properties": {
+    "difficulty": "hard",
+    "view-distance": 10,
+    "simulation-distance": 8,
+    "motd": "CST on the tailnet",
+    "white-list": false
+  },
+  "mods": [
+    {
+      "modrinth": "fabric-api",
+      "side": "server"
+    },
+    {
+      "modrinth": "lithium",
+      "side": "server"
+    },
+    {
+      "modrinth": "ferrite-core",
+      "side": "server"
+    },
+    {
+      "modrinth": "c2me-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "scalablelux",
+      "side": "server"
+    },
+    {
+      "modrinth": "vmp-fabric",
+      "side": "server"
+    },
+    {
+      "modrinth": "chunky",
+      "side": "server"
+    },
+    {
+      "modrinth": "spark",
+      "side": "server"
+    },
+    {
+      "modrinth": "clumps",
+      "side": "server"
+    },
+    {
+      "modrinth": "universal-graves",
+      "side": "server"
+    },
+    {
+      "modrinth": "skinrestorer",
+      "side": "server"
+    },
+    {
+      "modrinth": "villagerconfig",
+      "side": "server"
+    },
+    {
+      "modrinth": "dungeons-and-taverns",
+      "side": "server"
+    },
+    {
+      "modrinth": "incendium",
+      "side": "server"
+    },
+    {
+      "modrinth": "nullscape",
+      "side": "server"
+    },
+    {
+      "modrinth": "towns-and-towers",
+      "side": "server"
+    },
+    {
+      "modrinth": "bartering-station",
+      "side": "both"
+    },
+    {
+      "modrinth": "easy-anvils",
+      "side": "both"
+    },
+    {
+      "modrinth": "natures-compass",
+      "side": "both"
+    },
+    {
+      "modrinth": "storagedrawers",
+      "side": "both"
+    },
+    {
+      "modrinth": "toms-storage",
+      "side": "both"
+    },
+    {
+      "modrinth": "trade-cycling",
+      "side": "both"
+    },
+    {
+      "modrinth": "travelersbackpack",
+      "side": "both"
+    },
+    {
+      "modrinth": "waystones",
+      "side": "both"
+    },
+    {
+      "modrinth": "underground-villages",
+      "side": "both"
+    },
+    {
+      "modrinth": "hammers-and-excavators-miners-dream",
+      "side": "both"
+    },
+    {
+      "modrinth": "simple-voice-chat",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "jade",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "jei",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "xaeros-minimap",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "badoptimizations",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "sodium",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "iris",
+      "side": "client-optional"
+    },
+    {
+      "modrinth": "better-creeper-consent",
+      "side": "both"
+    },
+    {
+      "modrinth": "elemental-enchantments",
+      "side": "both"
+    },
+    {
+      "modrinth": "end-portal-recipe",
+      "side": "server"
+    },
+    {
+      "modrinth": "call-your-dog",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "craft-spawner",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "lightning-striker",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "structures-mod",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "antique-trading-ship",
+      "side": "both"
+    },
+    {
+      "modrinth": "illager-war-trireme",
+      "side": "both"
+    },
+    {
+      "modrinth": "collectall-ores-trees-and-crops",
+      "side": "both",
+      "clientOptional": true
+    },
+    {
+      "modrinth": "mob-loot-bags",
+      "side": "both"
+    },
+    {
+      "modrinth": "biomes-o-plenty",
+      "side": "both"
+    },
+    {
+      "jar": "dragonbond",
+      "filename": "the-deeper-end-fabric-1.1.1.jar",
+      "sha512": "0ed3c471f1d36567a8d781e232af0acecba618783c2cfb7312c0973bd1728bbb94268cf07cddf3155d2f15a79c91114f63b7d01f3cee65a5bc2bdb2344d41993",
+      "side": "both"
+    },
+    {
+      "jar": "bosslikeenderdragon",
+      "filename": "bosslike-ender-dragon-1.1.0-26.3-fabric.jar",
+      "sha512": "71998d363fac6d353e381582af7d0ec3ab11caae7edefd9e6067e3040be2e518e43d7d90089f18b12fb6dd2b8dfe4f314229757bc5c8502a593154b3f3b2eab6",
+      "side": "both"
+    },
+    {
+      "modrinth": "lootr",
+      "side": "both"
+    },
+    {
+      "modrinth": "carry-on",
+      "side": "both"
+    },
+    {
+      "modrinth": "nether-chested",
+      "side": "both"
+    },
+    {
+      "modrinth": "spiral-tower-villages",
+      "side": "server"
+    },
+    {
+      "jar": "citadel",
+      "filename": "citadelfabric-26.3-1.0.0.jar",
+      "sha512": "8dd206cd229fc2dbb9ce71f10989c7acad8ddb69b79f479612c0277c79487f328a3291b332e1d463200db21dab6ddd2257b1501ac045bf83a621f65fcc6d8fe0",
+      "side": "both"
+    },
+    {
+      "jar": "lootintegrations_vanilla",
+      "filename": "lootintegrations_vanilla-1.8.jar",
+      "sha512": "d1f3fa4222804b7502cf6d7bb5b1cf5b392ce71c2a8512e81a5432e303513e767cced28ec3a5cc5400150fe4437fb93a2b1935d20affbafbe3f46082727183b6",
+      "side": "both"
+    }
+  ],
+  "waiting": [
+    "explorify",
+    "mrcrayfishs-furniture-mod-tools-refurbished",
+    "medieval-buildings",
+    "true-ending",
+    "more-mobs"
+  ],
+  "resourcePack": {
+    "pack": "vt:resources",
+    "require": false
+  }
+}
