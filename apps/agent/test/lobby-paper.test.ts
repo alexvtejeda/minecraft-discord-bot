@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sha256Hex, type Fetch } from "@mc/profile";
-import { installBridge, installPaper, PAPER, paperCommand, writeFreshProperties } from "../src/lobby/paper";
+import { installBridge, installPaper, PAPER, paperCommand, writeLobbyProperties } from "../src/lobby/paper";
 
 let dir: string;
 let cacheDir: string;
@@ -38,13 +38,25 @@ test("copies the bridge plugin, and says how to fix a missing one", async () => 
 });
 
 test("a new lobby gets superflat adventure properties once; after that the file is the maintainer's", async () => {
-  expect(await writeFreshProperties(dir)).toBe(true);
+  expect(await writeLobbyProperties(dir)).toBe(true);
   const text = readFileSync(join(dir, "server.properties"), "utf8");
   expect(text).toContain("level-type=minecraft:flat");
   expect(text).toContain("gamemode=adventure");
-  writeFileSync(join(dir, "server.properties"), "motd=Mine\n");
-  expect(await writeFreshProperties(dir)).toBe(false);
-  expect(readFileSync(join(dir, "server.properties"), "utf8")).toBe("motd=Mine\n");
+  expect(text).toContain("accepts-transfers=true");
+  writeFileSync(join(dir, "server.properties"), "motd=Mine\naccepts-transfers=true\n");
+  expect(await writeLobbyProperties(dir)).toBe(false);
+  expect(readFileSync(join(dir, "server.properties"), "utf8")).toBe("motd=Mine\naccepts-transfers=true\n");
+});
+
+test("an existing or restored lobby always accepts transfers, and keeps its other properties", async () => {
+  writeFileSync(join(dir, "server.properties"), "#Minecraft server properties\nmotd=Mine\naccepts-transfers=false\ngamemode=creative\n");
+  expect(await writeLobbyProperties(dir)).toBe(false);
+  expect(readFileSync(join(dir, "server.properties"), "utf8")).toBe(
+    "#Minecraft server properties\nmotd=Mine\naccepts-transfers=true\ngamemode=creative\n",
+  );
+  writeFileSync(join(dir, "server.properties"), "motd=Mine\ngamemode=creative\n");
+  await writeLobbyProperties(dir);
+  expect(readFileSync(join(dir, "server.properties"), "utf8")).toBe("motd=Mine\ngamemode=creative\naccepts-transfers=true\n");
 });
 
 test("Paper starts without its GUI", () => {

@@ -16,7 +16,7 @@ import { javaFor } from "../java/runtime";
 import { dataDir as defaultDataDir } from "../paths";
 import { crashSummary } from "../run/crash";
 import { EULA_URL } from "../run/eula";
-import { installBridge, installPaper, PAPER, paperCommand, writeFreshProperties } from "./paper";
+import { installBridge, installPaper, PAPER, paperCommand, writeLobbyProperties } from "./paper";
 import { runLobby } from "./run";
 
 export async function cmdLobby(cmd: { fresh: boolean }, deps: Deps): Promise<void> {
@@ -43,7 +43,7 @@ export async function cmdLobby(cmd: { fresh: boolean }, deps: Deps): Promise<voi
         await mkdir(dir, { recursive: true });
         await installPaper(dir, download);
         await installBridge(dir, env.MC_LOBBY_BRIDGE_JAR);
-        await writeFreshProperties(dir);
+        await writeLobbyProperties(dir);
         await writeFile(join(dir, "eula.txt"), "eula=true\n");
       },
       ensureJava: () => javaFor(PAPER, { ...download, log: deps.log, override: deps.javaBin }),

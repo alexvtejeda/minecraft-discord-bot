@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { UserError, type Fetch } from "@mc/profile";
 import { fetchVerified } from "../download";
@@ -22,7 +22,7 @@ export type PaperBuild = typeof PAPER;
 export const PAPER_JAR = "paper.jar";
 export const BRIDGE_JAR = "lobby-bridge.jar";
 
-/** Only written for a lobby with no server.properties yet; after that the file is the maintainer's. */
+/** Only written for a lobby with no server.properties yet; after that the file is the maintainer's (except FORCED_PROPERTIES). */
 export const LOBBY_PROPERTIES: Record<string, string | number | boolean> = {
   motd: "Lobby: /play joins whoever is hosting",
   "level-type": "minecraft:flat",
@@ -60,12 +60,24 @@ export async function installBridge(dir: string, jar: string | undefined): Promi
   await copyFile(jar, join(dir, "plugins", BRIDGE_JAR));
 }
 
-export async function writeFreshProperties(dir: string): Promise<boolean> {
+/** Set on every start, even in an existing or restored folder: a host's `transfer` on stop needs it. */
+export const FORCED_PROPERTIES: Record<string, string | number | boolean> = { "accepts-transfers": true };
+
+/**
+ * A new lobby gets LOBBY_PROPERTIES; an existing one keeps its file and only has FORCED_PROPERTIES
+ * set. Returns true when the file was created.
+ */
+export async function writeLobbyProperties(dir: string): Promise<boolean> {
   const path = join(dir, "server.properties");
-  if (existsSync(path)) return false;
-  await mkdir(dir, { recursive: true });
-  await writeFile(path, mergeProperties("", LOBBY_PROPERTIES));
-  return true;
+  if (!existsSync(path)) {
+    await mkdir(dir, { recursive: true });
+    await writeFile(path, mergeProperties("", { ...LOBBY_PROPERTIES, ...FORCED_PROPERTIES }));
+    return true;
+  }
+  const existing = await readFile(path, "utf8");
+  const merged = mergeProperties(existing, FORCED_PROPERTIES);
+  if (merged !== existing) await writeFile(path, merged);
+  return false;
 }
 
 export const paperCommand = (javaBin: string): string[] => [javaBin, "-Xms512M", "-Xmx1536M", "-jar", PAPER_JAR, "--nogui"];

@@ -3448,7 +3448,7 @@ The slot frees itself 2 minutes after the last poll. To free it at once:
 - [ ] Ctrl+C on the host: everyone is sent back to the lobby, then the world saves
 - [ ] `mc-lobby stop`: hosting still works; `/status` shows "Lobby: ⚫ down, so connect straight to …"
 - [ ] `mc-lobby start` after 30+ minutes up: `mc-lobby logs` shows "Backed up the lobby as rev N"
-- [ ] Delete the data volume (`docker compose -p mc-lobby down -v` after `mc-lobby stop`), reinstall: the lobby restores from R2
+- [ ] Delete only the lobby's data (`mc-lobby stop`, then `docker rm mc-lobby-agent` and `docker volume rm mc-lobby_data`; the Tailscale state stays), reinstall: the lobby restores from R2
 - [ ] Drop in a downloaded hub map; it survives a stop, a backup and a restore
 ````
 
